@@ -3,8 +3,15 @@ dist/
 release/
 out-tsc/
 
+# Angular cache
+.angular/
+
 # Python
 engine/__pycache__/
+engine/app/__pycache__/
+engine/app/**/__pycache__/
+engine/tests/__pycache__/
+**/*.pyc
 engine/*.spec
 engine/build/
 engine/dist/
