@@ -4,6 +4,7 @@ import { Database } from '../services/database';
 import { PythonManager } from '../services/python-manager';
 import { Logger } from '../services/logger';
 import { httpRequest } from '../utils/http';
+import { createEvent } from '../services/events';
 
 export function registerScannerIpc(ipcMain: IpcMain, db: Database, pythonManager: PythonManager): void {
   ipcMain.handle('scanner:port-scan', async (_event, params: { targetIp: string; ports?: string; scanType?: string; versionDetection?: boolean }) => {
@@ -110,6 +111,31 @@ function persistVulnerabilityScan(db: Database, result: any): void {
       );
     }
 
+    if (result.vulnerabilities.length > 0) {
+      const criticalOnes = result.vulnerabilities.filter((v: any) => v.severity === 'critical');
+      const highOnes = result.vulnerabilities.filter((v: any) => v.severity === 'high');
+
+      if (criticalOnes.length > 0) {
+        createEvent(db, {
+          networkId: latestSnapshot.network_id,
+          type: 'vuln_critical',
+          severity: 'critical',
+          title: `Critical vulnerability found on ${result.target_ip}`,
+          description: `${criticalOnes.length} critical CVE(s) found — ${criticalOnes.map((v: any) => v.cve_id).join(', ')}`,
+        });
+      }
+
+      if (highOnes.length > 0) {
+        createEvent(db, {
+          networkId: latestSnapshot.network_id,
+          type: 'vuln_critical',
+          severity: 'warning',
+          title: `High severity vulnerability found on ${result.target_ip}`,
+          description: `${highOnes.length} high severity CVE(s) found`,
+        });
+      }
+    }
+
     Logger.info(`Persisted ${result.total_found} vulns for ${result.target_ip} (scan ${portScanId})`);
   } catch (err) {
     Logger.error('Failed to persist vulnerability scan', err as Error);
@@ -150,6 +176,16 @@ function persistPortScan(db: Database, result: any): void {
       portScanId, latestSnapshot.id, latestDevice.id,
       result.scan_type, now, now, JSON.stringify(result), 'completed',
     );
+
+    if (result.open_ports && result.open_ports.length > 0) {
+      createEvent(db, {
+        networkId: latestSnapshot.network_id,
+        type: 'port_new',
+        severity: 'info',
+        title: `Open ports found on ${result.target_ip}`,
+        description: `${result.open_ports.length} open port(s): ${result.open_ports.map((p: any) => `${p.port}/${p.protocol ?? 'tcp'}`).join(', ')}`,
+      });
+    }
 
     Logger.info(`Persisted port scan ${portScanId} for ${result.target_ip}`);
   } catch (err) {

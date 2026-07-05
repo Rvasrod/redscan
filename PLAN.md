@@ -122,21 +122,21 @@
 
 ---
 
-## Fase 7: Sistema de Alertas y Eventos
+## Fase 7: Sistema de Alertas y Eventos ✅
 
-- [ ] **Node:** Sistema de eventos con severidad (info/warning/critical)
-  - [ ] Evento: dispositivo nuevo detectado
-  - [ ] Evento: dispositivo desaparecido
-  - [ ] Evento: puerto nuevo abierto
-  - [ ] Evento: vulnerabilidad crítica encontrada
-  - [ ] Evento: latencia alta sostenida
-- [ ] **Node:** Persistencia de eventos en SQLite
-- [ ] **Node:** Notificaciones del sistema operativo (Electron Notification API)
-- [ ] **Angular:** Feed de eventos en dashboard
-- [ ] **Angular:** Badge de notificaciones no leídas
-- [ ] **Angular:** Marcado de eventos como leídos
+- [x] **Node:** Sistema de eventos con severidad (info/warning/critical)
+  - [x] Evento: dispositivo nuevo detectado (en persistSnapshot)
+  - [x] Evento: dispositivo desaparecido (en persistSnapshot)
+  - [x] Evento: puerto nuevo abierto (en persistPortScan)
+  - [x] Evento: vulnerabilidad crítica/alta encontrada (en persistVulnerabilityScan)
+  - [x] Evento: latencia alta sostenida / pérdida de paquetes (en persistLatency)
+- [x] **Node:** Persistencia de eventos en SQLite
+- [x] **Node:** Notificaciones OS (Electron Notification API) para warning/critical
+- [x] **Angular:** IPC handlers: events:get-all, events:acknowledge, events:acknowledge-all, events:unread-count
+- [x] **Angular:** Badge de no leídos en sidebar History (polling cada 10s)
+- [x] **Angular:** Marcado de eventos como leídos (individual y masivo)
 
-**Commit:** `f7 — Alert & event system`
+**Commit:** `f7 — Sistema de alertas y eventos`
 
 ---
 

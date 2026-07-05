@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 
@@ -32,6 +32,9 @@ import { ApiService } from '../../core/services/api.service';
           </a>
           <a class="nav-item" routerLink="/history" routerLinkActive="active">
             <span class="nav-icon">⏱</span> History
+            @if (unreadCount() > 0) {
+              <span class="badge">{{ unreadCount() }}</span>
+            }
           </a>
         </nav>
       </aside>
@@ -53,9 +56,32 @@ import { ApiService } from '../../core/services/api.service';
     .nav-item:hover { background: rgba(233, 69, 96, 0.05); color: #e0e0e0; }
     .nav-item.active { background: rgba(233, 69, 96, 0.1); color: #e94560; border-left-color: #e94560; }
     .nav-icon { font-size: 1rem; width: 1.2rem; text-align: center; }
+    .badge { margin-left: auto; background: #e94560; color: white; font-size: 0.7rem; padding: 0.1rem 0.5rem; border-radius: 10px; font-weight: 600; }
     .main-content { flex: 1; overflow-y: auto; }
   `],
 })
-export class MainLayoutComponent {
+export class MainLayoutComponent implements OnInit, OnDestroy {
   protected readonly api = inject(ApiService);
+  protected readonly unreadCount = signal(0);
+  private intervalId?: ReturnType<typeof setInterval>;
+
+  async ngOnInit(): Promise<void> {
+    await this.refreshUnreadCount();
+    this.intervalId = setInterval(() => this.refreshUnreadCount(), 10000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.intervalId) clearInterval(this.intervalId);
+  }
+
+  private async refreshUnreadCount(): Promise<void> {
+    try {
+      const result = await this.api.getUnreadCount();
+      if (result.success && result.count !== undefined) {
+        this.unreadCount.set(result.count);
+      }
+    } catch {
+      // ignore polling errors
+    }
+  }
 }

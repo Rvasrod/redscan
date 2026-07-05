@@ -5,6 +5,7 @@ export interface IpcApi {
   on: (channel: string, callback: (...args: unknown[]) => void) => void;
   off: (channel: string, callback: (...args: unknown[]) => void) => void;
   once: (channel: string, callback: (...args: unknown[]) => void) => void;
+  send: (channel: string, ...args: unknown[]) => void;
 }
 
 const api: IpcApi = {
@@ -20,6 +21,9 @@ const api: IpcApi = {
   },
   once: (channel: string, callback: (...args: unknown[]) => void) => {
     ipcRenderer.once(channel, (_event: IpcRendererEvent, ...args: unknown[]) => callback(...args));
+  },
+  send: (channel: string, ...args: unknown[]) => {
+    ipcRenderer.send(channel, ...args);
   },
 };
 

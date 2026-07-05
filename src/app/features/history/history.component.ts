@@ -155,9 +155,12 @@ type View = 'list' | 'snapshots' | 'detail' | 'compare' | 'events';
         @if (events().length === 0) {
           <div class="empty"><p>No events recorded yet.</p></div>
         }
+        <div class="events-toolbar">
+          <button class="btn-ack-all" (click)="acknowledgeAll()">Acknowledge All</button>
+        </div>
         <div class="events-list">
           @for (e of events(); track e.id) {
-            <div class="event-item" [class]="'event-severity-' + e.severity">
+            <div class="event-item" [class]="'event-severity-' + e.severity" [class.acknowledged]="e.acknowledged">
               <div class="event-icon">
                 @if (e.type === 'device_new') { + }
                 @else if (e.type === 'device_gone') { − }
@@ -168,6 +171,9 @@ type View = 'list' | 'snapshots' | 'detail' | 'compare' | 'events';
                 @if (e.description) { <div class="event-desc">{{ e.description }}</div> }
                 <div class="event-time">{{ e.created_at | date:'medium' }}</div>
               </div>
+              @if (!e.acknowledged) {
+                <button class="btn-ack" (click)="acknowledgeEvent(e.id)">✓</button>
+              }
             </div>
           }
         </div>
@@ -226,6 +232,12 @@ type View = 'list' | 'snapshots' | 'detail' | 'compare' | 'events';
     .device-table .diff-new .ip::before { content: '+ '; color: #4ecca3; font-weight: 700; }
     .device-table .diff-removed td { background: rgba(233, 69, 96, 0.08); opacity: 0.6; }
     .device-table .diff-removed .ip::before { content: '− '; color: #e94560; font-weight: 700; }
+    .events-toolbar { margin-bottom: 0.8rem; display: flex; justify-content: flex-end; }
+    .btn-ack-all { padding: 0.4rem 1rem; background: #0f3460; color: #4ecca3; border: 1px solid #4ecca3; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
+    .btn-ack-all:hover { background: rgba(78, 204, 163, 0.1); }
+    .btn-ack { padding: 0.2rem 0.6rem; background: transparent; color: #4ecca3; border: 1px solid #4ecca3; border-radius: 4px; cursor: pointer; font-size: 0.8rem; margin-left: auto; align-self: center; }
+    .btn-ack:hover { background: rgba(78, 204, 163, 0.15); }
+    .event-item.acknowledged { opacity: 0.5; }
     .events-list { display: flex; flex-direction: column; gap: 0.5rem; }
     .event-item { display: flex; align-items: flex-start; gap: 0.8rem; background: #1a1a2e; border: 1px solid #0f3460; border-radius: 8px; padding: 0.8rem 1rem; }
     .event-icon { font-size: 1.2rem; margin-top: 0.1rem; min-width: 1.5rem; text-align: center; }
@@ -333,5 +345,15 @@ export class HistoryComponent implements OnInit {
     } else {
       this.currentView.set('list');
     }
+  }
+
+  async acknowledgeEvent(eventId: string): Promise<void> {
+    await this.api.acknowledgeEvent(eventId);
+    this.events.update(list => list.map(e => e.id === eventId ? { ...e, acknowledged: 1 } : e));
+  }
+
+  async acknowledgeAll(): Promise<void> {
+    await this.api.acknowledgeAllEvents();
+    this.events.update(list => list.map(e => ({ ...e, acknowledged: 1 })));
   }
 }

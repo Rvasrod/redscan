@@ -69,4 +69,20 @@ export class ApiService {
   async setSetting(key: string, value: string): Promise<ApiResult<void>> {
     return this.ipc.invoke('settings:set', key, value);
   }
+
+  async getAllEvents(networkId?: string): Promise<ApiResult<any[]>> {
+    return this.ipc.invoke('events:get-all', networkId);
+  }
+
+  async acknowledgeEvent(eventId: string): Promise<ApiResult<void>> {
+    return this.ipc.invoke('events:acknowledge', eventId);
+  }
+
+  async acknowledgeAllEvents(): Promise<ApiResult<void>> {
+    return this.ipc.invoke('events:acknowledge-all');
+  }
+
+  async getUnreadCount(): Promise<{ success: boolean; count?: number; error?: string }> {
+    return this.ipc.invoke('events:unread-count');
+  }
 }
