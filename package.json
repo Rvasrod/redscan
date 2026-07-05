@@ -1,0 +1,48 @@
+{
+  "name": "netsentinel",
+  "version": "0.1.0",
+  "description": "Network monitoring and testing desktop application",
+  "main": "dist/electron/main.js",
+  "author": "NetSentinel Team",
+  "license": "MIT",
+  "scripts": {
+    "ng": "ng",
+    "start:renderer": "ng serve",
+    "build:renderer": "ng build",
+    "start:electron": "electron .",
+    "dev": "concurrently \"npm run start:renderer\" \"wait-on http://localhost:4200 && npm run start:electron\"",
+    "dev:python": "cd engine && uvicorn app.main:app --reload --port 8765",
+    "build:python": "cd engine && pyinstaller --onefile --name netsentinel-engine --distpath ../resources app/main.py",
+    "build:electron": "npm run build:renderer && electron-builder",
+    "build": "npm run build:python && npm run build:electron",
+    "test:angular": "ng test",
+    "test:python": "cd engine && pytest",
+    "lint": "ng lint"
+  },
+  "dependencies": {
+    "@angular/animations": "^19.0.0",
+    "@angular/common": "^19.0.0",
+    "@angular/compiler": "^19.0.0",
+    "@angular/core": "^19.0.0",
+    "@angular/forms": "^19.0.0",
+    "@angular/platform-browser": "^19.0.0",
+    "@angular/platform-browser-dynamic": "^19.0.0",
+    "@angular/router": "^19.0.0",
+    "better-sqlite3": "^11.0.0",
+    "rxjs": "^7.8.0",
+    "zone.js": "^0.15.0"
+  },
+  "devDependencies": {
+    "@angular-devkit/build-angular": "^19.0.0",
+    "@angular/cli": "^19.0.0",
+    "@angular/compiler-cli": "^19.0.0",
+    "@types/better-sqlite3": "^7.6.0",
+    "@types/node": "^22.0.0",
+    "concurrently": "^9.0.0",
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0",
+    "jest": "^29.7.0",
+    "typescript": "~5.6.0",
+    "wait-on": "^8.0.0"
+  }
+}

@@ -1,0 +1,30 @@
+node_modules/
+dist/
+release/
+out-tsc/
+
+# Python
+engine/__pycache__/
+engine/*.spec
+engine/build/
+engine/dist/
+engine/.venv/
+engine/venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Build artifacts
+resources/
+build/

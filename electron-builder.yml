@@ -1,0 +1,46 @@
+appId: com.netsentinel.app
+productName: NetSentinel
+copyright: Copyright (c) 2026 NetSentinel
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - dist/electron/**/*
+  - dist/renderer/**/*
+
+extraResources:
+  - from: resources/
+    to: engine
+    filter:
+      - "netsentinel-engine*"
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.ico
+
+mac:
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+  icon: build/icon.icns
+  category: public.app-category.utilities
+
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+  icon: build/icon.png
+  category: Network
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  license: LICENSE.txt
