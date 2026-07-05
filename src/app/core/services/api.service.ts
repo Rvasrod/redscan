@@ -49,6 +49,15 @@ export class ApiService {
     return this.ipc.invoke('history:compare', snapshotIdA, snapshotIdB);
   }
 
+  async getEnginePort(): Promise<number> {
+    const info = await this.ipc.invoke<{ version: string; enginePort: number }>('app:get-version');
+    return info.enginePort;
+  }
+
+  async measureLatency(target?: string): Promise<ApiResult<any>> {
+    return this.ipc.invoke('latency:measure', { target });
+  }
+
   async getSetting(key: string): Promise<ApiResult<string>> {
     return this.ipc.invoke('settings:get', key);
   }

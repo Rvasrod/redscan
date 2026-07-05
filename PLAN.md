@@ -73,17 +73,17 @@
 
 ---
 
-## Fase 4: Latencia y Calidad de Conexión
+## Fase 4: Latencia y Calidad de Conexión ✅
 
-- [ ] **Python:** Service de ping asíncrono a gateway e internet (8.8.8.8)
-- [ ] **Python:** Cálculo de jitter y pérdida de paquetes
-- [ ] **Python:** WebSocket endpoint `/api/v1/latency/ws` con streaming en vivo
-- [ ] **Python:** Tests para latency service
-- [ ] **Node:** IPC handler con almacenamiento histórico de mediciones
-- [ ] **Angular:** Dashboard de latencia en tiempo real con WebSocket
-- [ ] **Angular:** Gráfico de líneas (últimos 60 segundos)
-- [ ] **Angular:** Indicadores: latencia actual, jitter, pérdida de paquetes
-- [ ] **Angular:** Alertas visuales si latencia > umbral o pérdida > 5%
+- [x] **Python:** Service de ping asíncrono con manejo de fallos individuales
+- [x] **Python:** Cálculo de latencia (avg/min/max), jitter y pérdida de paquetes
+- [x] **Python:** REST endpoint `POST /latency/measure` + WebSocket `/latency/ws` en vivo
+- [x] **Python:** Tests (modelos — 3 tests)
+- [x] **Node:** IPC handler con almacenamiento histórico en tabla `latency_meas`
+- [x] **Angular:** Dashboard en tiempo real con WebSocket (conexión directa al engine)
+- [x] **Angular:** Gráfico de barras dinámico (últimas 60 lecturas)
+- [x] **Angular:** Indicadores: latencia, jitter, pérdida de paquetes, target
+- [x] **Angular:** Alertas visuales si latencia > 150ms o pérdida > 5%
 
 **Commit:** `f4 — Latency & connection quality module`
 

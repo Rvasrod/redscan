@@ -1,0 +1,50 @@
+import { randomUUID } from 'crypto';
+import { IpcMain } from 'electron';
+import { Database } from '../services/database';
+import { Logger } from '../services/logger';
+import { httpRequest } from '../utils/http';
+
+export function registerLatencyIpc(ipcMain: IpcMain, db: Database, pythonManager: { port: number }): void {
+  ipcMain.handle('latency:measure', async (_event, params: { target?: string }) => {
+    try {
+      const target = params.target ?? 'gateway';
+      const data = await httpRequest(`http://127.0.0.1:${pythonManager.port}/api/v1/latency/measure?target=${encodeURIComponent(target)}`, {
+        method: 'POST',
+      });
+      const result = JSON.parse(data);
+      persistLatency(db, result);
+      return { success: true, data: result };
+    } catch (err) {
+      Logger.error('Failed to measure latency', err as Error);
+      return { success: false, error: (err as Error).message };
+    }
+  });
+}
+
+function persistLatency(db: Database, measurement: any): void {
+  try {
+    const database = db.getDb();
+
+    const latestNetwork = database.prepare(
+      'SELECT id FROM networks ORDER BY last_seen DESC LIMIT 1'
+    ).get() as { id: string } | undefined;
+
+    if (!latestNetwork) {
+      Logger.warn('No network found for latency persistence');
+      return;
+    }
+
+    database.prepare(
+      `INSERT INTO latency_meas (id, network_id, timestamp, target, avg_latency_ms, min_latency_ms, max_latency_ms, jitter_ms, packet_loss_pct)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      randomUUID(), latestNetwork.id, measurement.timestamp, measurement.target,
+      measurement.avg_latency_ms, measurement.min_latency_ms, measurement.max_latency_ms,
+      measurement.jitter_ms, measurement.packet_loss_pct,
+    );
+
+    Logger.debug(`Persisted latency measurement for ${measurement.target}`);
+  } catch (err) {
+    Logger.error('Failed to persist latency measurement', err as Error);
+  }
+}
