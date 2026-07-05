@@ -2,15 +2,19 @@ from pydantic import BaseModel
 from typing import Optional
 
 
+SCAN_TYPES = ["tcp_syn", "tcp_connect", "udp", "tcp_syn_version", "tcp_connect_version"]
+
+
 class PortScanRequest(BaseModel):
     target_ip: str
     ports: Optional[str] = None
-    scan_type: str = "tcp"
+    scan_type: str = "tcp_syn"
+    version_detection: bool = False
 
 
 class PortInfo(BaseModel):
     port: int
-    state: str
+    state: str = "open"
     service: Optional[str] = None
     version: Optional[str] = None
 

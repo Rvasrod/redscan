@@ -21,8 +21,12 @@ export class ApiService {
     return this.ipc.invoke('discovery:scan');
   }
 
-  async portScan(params: { targetIp: string; ports?: string; scanType?: string }): Promise<ApiResult<any>> {
+  async portScan(params: { targetIp: string; ports?: string; scanType?: string; versionDetection?: boolean }): Promise<ApiResult<any>> {
     return this.ipc.invoke('scanner:port-scan', params);
+  }
+
+  async getScanTypes(): Promise<ApiResult<string[]>> {
+    return this.ipc.invoke('scanner:get-scan-types');
   }
 
   async vulnerabilityScan(params: { targetIp: string }): Promise<ApiResult<any>> {

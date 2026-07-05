@@ -5,39 +5,65 @@ import nmap
 
 from app.core.logger import logger
 from app.core.exceptions import NmapNotFoundError, PortScanError
-from app.models.port_scan import PortScanRequest, PortInfo, PortScanResult
+from app.models.port_scan import PortScanRequest, PortInfo, PortScanResult, SCAN_TYPES
+
+
+_SCAN_TYPE_ARGS: dict[str, str] = {
+    "tcp_syn": "-sS -T4 --open",
+    "tcp_connect": "-sT -T4 --open",
+    "udp": "-sU -T4 --open",
+    "tcp_syn_version": "-sS -sV -T4 --open",
+    "tcp_connect_version": "-sT -sV -T4 --open",
+}
 
 
 class PortScannerService:
-    async def scan(self, request: PortScanRequest) -> PortScanResult:
-        logger.info(f"Starting port scan on {request.target_ip}")
+    async def scan(self, request: PortScanRequest, progress_callback=None) -> PortScanResult:
+        logger.info(f"Starting {request.scan_type} scan on {request.target_ip}")
         self._check_nmap()
         start = time.time()
 
-        try:
-            nm = nmap.PortScanner()
-            ports_arg = request.ports or "1-1024"
-            arguments = "-sS" if request.scan_type == "tcp" else "-sU"
+        if request.scan_type not in _SCAN_TYPE_ARGS:
+            raise PortScanError(f"Invalid scan type: {request.scan_type}. Options: {', '.join(SCAN_TYPES)}")
 
+        if progress_callback:
+            await progress_callback(f"Initializing {request.scan_type} scan...")
+
+        ports_arg = request.ports or "1-1024"
+        base_args = _SCAN_TYPE_ARGS[request.scan_type]
+
+        if request.version_detection and request.scan_type in ("tcp_syn", "tcp_connect", "udp"):
+            base_args += " -sV"
+
+        try:
+            if progress_callback:
+                await progress_callback(f"Scanning {request.target_ip}:{ports_arg}...")
+
+            nm = nmap.PortScanner()
             result = nm.scan(
                 hosts=request.target_ip,
                 ports=ports_arg,
-                arguments=f"{arguments} -T4 --open",
+                arguments=base_args,
             )
 
             duration = (time.time() - start) * 1000
-            open_ports = []
 
+            if progress_callback:
+                await progress_callback("Parsing results...")
+
+            open_ports: list[PortInfo] = []
             host_data = result.get("scan", {}).get(request.target_ip, {})
-            for proto in host_data.get("tcp", {}):
-                port_info = host_data["tcp"][proto]
-                if port_info["state"] == "open":
-                    open_ports.append(PortInfo(
-                        port=int(proto),
-                        state=port_info["state"],
-                        service=port_info.get("name"),
-                        version=port_info.get("version"),
-                    ))
+
+            for proto in ("tcp", "udp"):
+                for port_str in host_data.get(proto, {}):
+                    port_info = host_data[proto][port_str]
+                    if port_info["state"] == "open":
+                        open_ports.append(PortInfo(
+                            port=int(port_str),
+                            state=port_info["state"],
+                            service=port_info.get("name"),
+                            version=port_info.get("version"),
+                        ))
 
             return PortScanResult(
                 target_ip=request.target_ip,
@@ -59,3 +85,6 @@ class PortScannerService:
                 "nmap is not installed or not found in PATH. "
                 "Install it from https://nmap.org/download.html"
             ) from e
+
+    def get_available_types(self) -> list[str]:
+        return list(SCAN_TYPES)

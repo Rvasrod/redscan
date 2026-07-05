@@ -19,37 +19,38 @@
 
 ---
 
-## Fase 1: Discovery (Detección pasiva de dispositivos)
+## Fase 1: Discovery (Detección pasiva de dispositivos) ✅
 
-- [ ] **Python:** Implementar detección completa de red actual (SSID, gateway, subred, IP/MAC local)
-  - [ ] Windows: `ipconfig /all` parser (mejorar el actual)
-  - [ ] Linux/macOS: `ifconfig`/`ip addr` parser
-- [ ] **Python:** Implementar ARP scan con scapy (fallback a `arp -a`)
-- [ ] **Python:** Integrar vendor lookup por OUI en resultados
-- [ ] **Python:** Endpoint `GET /api/v1/discovery/network` completo
-- [ ] **Python:** Endpoint `POST /api/v1/discovery/scan` con progreso vía WebSocket
-- [ ] **Python:** Tests para discovery service
-- [ ] **Node:** IPC handler mejorado con persistencia de snapshot
-- [ ] **Angular:** UI de discovery con tabla de dispositivos (IP, MAC, vendor, hostname)
-- [ ] **Angular:** Indicador de estado "escaneando..."
-- [ ] **E2E:** Probar discovery en red local
+- [x] **Python:** Implementar detección completa de red actual (SSID, gateway, subred, IP/MAC local)
+  - [x] Windows: `ipconfig /all` parser + `netsh wlan` + `route print`
+  - [x] Linux/macOS: `ip`/`ifconfig`/`nmcli`/`iwgetid` parser
+- [x] **Python:** Implementar ARP scan con scapy (fallback a `arp -a`)
+- [x] **Python:** Integrar vendor lookup por OUI en resultados
+- [x] **Python:** Endpoint `GET /api/v1/discovery/network` completo
+- [x] **Python:** Endpoint `POST /api/v1/discovery/scan` + WebSocket `/ws/scan` con progreso
+- [x] **Python:** Tests (modelos, OUI — 18 tests)
+- [x] **Node:** IPC handler mejorado con persistencia de snapshot
+- [x] **Angular:** UI de discovery con tabla de dispositivos (IP, MAC, vendor, hostname)
+- [x] **Angular:** Indicador de estado "escaneando..."
+- [ ] **Pendiente:** E2E — Probar discovery en red local
 
-**Commit:** `f1 — Network discovery module`
+**Commit:** `1154390 — feat: completar descubrimiento de red (Fase 1)`
 
 ---
 
-## Fase 2: Port Scanning (Escaneo activo de puertos)
+## Fase 2: Port Scanning (Escaneo activo de puertos) 🔄
 
-- [ ] **Python:** Mejorar service de port scanning con opciones avanzadas
-  - [ ] Escaneo TCP SYN (-sS), TCP connect (-sT), UDP (-sU)
-  - [ ] Rango de puertos personalizable
-  - [ ] Detección de versión de servicio (-sV)
-- [ ] **Python:** Endpoint `POST /api/v1/scan/ports` con progreso vía WebSocket
+- [x] **Python:** Mejorar service de port scanning con opciones avanzadas
+  - [x] Escaneo TCP SYN (-sS), TCP connect (-sT), UDP (-sU)
+  - [x] Rango de puertos personalizable
+  - [x] Detección de versión de servicio (-sV)
+- [x] **Python:** Endpoint `POST /api/v1/scan/ports` + WebSocket `/ws/ports` con progreso
+- [x] **Python:** Endpoint `GET /api/v1/scan/types`
 - [ ] **Python:** Tests para port scanner
-- [ ] **Node:** IPC handler con registro en base de datos
-- [ ] **Angular:** Modal de confirmación/aviso legal para escaneo activo
-- [ ] **Angular:** Formulario: IP objetivo, rango de puertos, tipo de escaneo
-- [ ] **Angular:** Tabla de resultados (puerto, estado, servicio, versión)
+- [x] **Node:** IPC handler con registro en base de datos
+- [x] **Angular:** Banner de advertencia para escaneo activo
+- [x] **Angular:** Formulario: IP objetivo (select desde discovery), rango de puertos, tipo de escaneo
+- [x] **Angular:** Tabla de resultados (puerto, estado, servicio, versión)
 - [ ] **Angular:** Badge de severidad en resultados
 
 **Commit:** `f2 — Port scanning module`
