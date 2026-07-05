@@ -45,6 +45,10 @@ export class ApiService {
     return this.ipc.invoke('history:get-snapshot-detail', snapshotId);
   }
 
+  async getEvents(networkId: string): Promise<ApiResult<any[]>> {
+    return this.ipc.invoke('history:get-events', networkId);
+  }
+
   async compareSnapshots(snapshotIdA: string, snapshotIdB: string): Promise<ApiResult<any>> {
     return this.ipc.invoke('history:compare', snapshotIdA, snapshotIdB);
   }

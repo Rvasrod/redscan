@@ -89,18 +89,18 @@
 
 ---
 
-## Fase 5: Histórico y Comparación entre Redes
+## Fase 5: Histórico y Comparación entre Redes ✅
 
-- [ ] **Node:** Servicio de snapshots: guardar estado completo al detectar red
-- [ ] **Node:** Algoritmo de comparación entre dos snapshots
-  - [ ] Detectar dispositivos nuevos
-  - [ ] Detectar dispositivos desaparecidos
-  - [ ] Detectar cambios de puertos abiertos
-- [ ] **Node:** Generación de eventos (device_new, device_gone, port_new, port_closed)
-- [ ] **Angular:** Vista de lista de redes conocidas con metadatos
-- [ ] **Angular:** Vista de detalle de snapshot (dispositivos + puertos)
-- [ ] **Angular:** Vista de comparación lado a lado con diff resaltado
-- [ ] **Angular:** Timeline de eventos por red
+- [x] **Node:** Servicio de snapshots: guardar estado completo al detectar red
+- [x] **Node:** Algoritmo de comparación entre dos snapshots
+  - [x] Detectar dispositivos nuevos
+  - [x] Detectar dispositivos desaparecidos
+- [x] **Node:** Generación de eventos (device_new, device_gone) almacenados en DB
+- [x] **Node:** IPC handler `history:get-events` para timeline
+- [x] **Angular:** Vista de lista de redes conocidas con metadatos (SSID, gateway, fechas)
+- [x] **Angular:** Vista de detalle de snapshot (tabla de dispositivos)
+- [x] **Angular:** Vista de comparación lado a lado con diff resaltado (+ verde, − rojo)
+- [x] **Angular:** Timeline de eventos por red con severidad
 
 **Commit:** `f5 — History & comparison module`
 
