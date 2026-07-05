@@ -3,15 +3,16 @@ import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AppStateService } from '../../core/services/app-state.service';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterLink, DatePipe],
+  imports: [RouterLink, DatePipe, TranslatePipe],
   template: `
     <div class="dashboard">
       <header class="header">
-        <h1>Dashboard</h1>
+        <h1>{{ 'dashboard.title' | translate }}</h1>
         <div class="header-right">
           @if (state.currentNetwork(); as net) {
             <span class="current-ssid">{{ net.ssid }}</span>
@@ -29,38 +30,38 @@ import { AppStateService } from '../../core/services/app-state.service';
       @if (isLoading()) {
         <section class="loading-section">
           <div class="spinner"></div>
-          <p>Loading dashboard data...</p>
+          <p>{{ 'dashboard.loading' | translate }}</p>
         </section>
       } @else {
         <div class="summary-grid">
           <div class="summary-card">
-            <span class="label">Devices</span>
+            <span class="label">{{ 'dashboard.devices' | translate }}</span>
             <span class="value">{{ deviceCount() }}</span>
             <span class="sub">{{ deviceChange() }}</span>
           </div>
 
           <div class="summary-card">
-            <span class="label">Vulnerabilities</span>
+            <span class="label">{{ 'dashboard.vulnerabilities' | translate }}</span>
             <span class="value">{{ vulnCount() }}</span>
             <span class="sub">{{ vulnBreakdown() }}</span>
           </div>
 
           <div class="summary-card">
-            <span class="label">Latency</span>
+            <span class="label">{{ 'dashboard.latency' | translate }}</span>
             <span class="value">{{ latencyDisplay() }}</span>
             <span class="sub">{{ jitterDisplay() }}</span>
           </div>
 
           <div class="summary-card" routerLink="/history" style="cursor:pointer">
-            <span class="label">Events (24h)</span>
+            <span class="label">{{ 'dashboard.events' | translate }}</span>
             <span class="value">{{ eventCount() }}</span>
-            <span class="sub">View history →</span>
+            <span class="sub">{{ 'dashboard.viewHistory' | translate }} →</span>
           </div>
         </div>
 
         @if (state.currentNetwork(); as net) {
           <section class="section current-network">
-            <h3>Current Network</h3>
+            <h3>{{ 'dashboard.currentNetwork' | translate }}</h3>
             <div class="network-info">
               <span><strong>SSID:</strong> {{ net.ssid }}</span>
               <span><strong>Gateway:</strong> {{ net.gateway_ip }}</span>
@@ -73,7 +74,7 @@ import { AppStateService } from '../../core/services/app-state.service';
 
         @if (events().length > 0) {
           <section class="section events-section">
-            <h3>Recent Events</h3>
+            <h3>{{ 'dashboard.events' | translate }}</h3>
             <div class="events-list">
               @for (e of events(); track e.id) {
                 <div class="event-item" [class]="'sev-' + e.severity">
@@ -91,12 +92,12 @@ import { AppStateService } from '../../core/services/app-state.service';
         }
 
         <section class="section quick-links">
-          <h3>Quick Actions</h3>
+          <h3>{{ 'dashboard.quickActions' | translate }}</h3>
           <div class="links-grid">
-            <a class="link-card" routerLink="/discovery">Scan Network</a>
-            <a class="link-card" routerLink="/port-scan">Port Scan</a>
-            <a class="link-card" routerLink="/vulnerability">Check Vulns</a>
-            <a class="link-card" routerLink="/latency">Monitor Latency</a>
+            <a class="link-card" routerLink="/discovery">{{ 'dashboard.discoverNow' | translate }}</a>
+            <a class="link-card" routerLink="/port-scan">{{ 'dashboard.scanPorts' | translate }}</a>
+            <a class="link-card" routerLink="/vulnerability">{{ 'dashboard.findVulns' | translate }}</a>
+            <a class="link-card" routerLink="/latency">{{ 'dashboard.measureLatency' | translate }}</a>
           </div>
         </section>
       }

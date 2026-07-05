@@ -1,11 +1,13 @@
 import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
+import { LocaleService } from '../../core/i18n/locale.service';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 @Component({
   selector: 'app-main-layout',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, TranslatePipe],
   template: `
     <div class="app-shell">
       <aside class="sidebar">
@@ -16,27 +18,32 @@ import { ApiService } from '../../core/services/api.service';
 
         <nav class="sidebar-nav">
           <a class="nav-item" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">
-            <span class="nav-icon">◉</span> Dashboard
+            <span class="nav-icon">◉</span> {{ 'nav.dashboard' | translate }}
           </a>
           <a class="nav-item" routerLink="/discovery" routerLinkActive="active">
-            <span class="nav-icon">⊙</span> Discovery
+            <span class="nav-icon">⊙</span> {{ 'nav.discovery' | translate }}
           </a>
           <a class="nav-item" routerLink="/port-scan" routerLinkActive="active">
-            <span class="nav-icon">◎</span> Port Scan
+            <span class="nav-icon">◎</span> {{ 'nav.portScan' | translate }}
           </a>
           <a class="nav-item" routerLink="/vulnerability" routerLinkActive="active">
-            <span class="nav-icon">⚠</span> Vulnerabilities
+            <span class="nav-icon">⚠</span> {{ 'nav.vulnerabilities' | translate }}
           </a>
           <a class="nav-item" routerLink="/latency" routerLinkActive="active">
-            <span class="nav-icon">▤</span> Latency
+            <span class="nav-icon">▤</span> {{ 'nav.latency' | translate }}
           </a>
           <a class="nav-item" routerLink="/history" routerLinkActive="active">
-            <span class="nav-icon">⏱</span> History
+            <span class="nav-icon">⏱</span> {{ 'nav.history' | translate }}
             @if (unreadCount() > 0) {
               <span class="badge">{{ unreadCount() }}</span>
             }
           </a>
         </nav>
+        <div class="sidebar-footer">
+          <a class="nav-item" routerLink="/settings" routerLinkActive="active">
+            <span class="nav-icon">⚙</span> {{ 'settings.title' | translate }}
+          </a>
+        </div>
       </aside>
 
       <main class="main-content">
@@ -57,11 +64,13 @@ import { ApiService } from '../../core/services/api.service';
     .nav-item.active { background: rgba(233, 69, 96, 0.1); color: #e94560; border-left-color: #e94560; }
     .nav-icon { font-size: 1rem; width: 1.2rem; text-align: center; }
     .badge { margin-left: auto; background: #e94560; color: white; font-size: 0.7rem; padding: 0.1rem 0.5rem; border-radius: 10px; font-weight: 600; }
+    .sidebar-footer { margin-top: auto; border-top: 1px solid #0f3460; padding: 0.5rem 0; }
     .main-content { flex: 1; overflow-y: auto; }
   `],
 })
 export class MainLayoutComponent implements OnInit, OnDestroy {
   protected readonly api = inject(ApiService);
+  protected readonly locale = inject(LocaleService);
   protected readonly unreadCount = signal(0);
   private intervalId?: ReturnType<typeof setInterval>;
 

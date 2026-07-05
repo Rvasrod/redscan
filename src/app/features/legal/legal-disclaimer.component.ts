@@ -1,14 +1,17 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
+import { LocaleService } from '../../core/i18n/locale.service';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 @Component({
   selector: 'app-legal-disclaimer',
   standalone: true,
+  imports: [TranslatePipe],
   template: `
     <div class="legal-overlay">
       <div class="legal-modal">
-        <h1>NetSentinel — Aviso Legal / Legal Disclaimer</h1>
+        <h1>{{ 'app.name' | translate }} — {{ 'legal.title' | translate }}</h1>
         
         <div class="legal-content">
           <h2>English</h2>
@@ -55,10 +58,10 @@ import { ApiService } from '../../core/services/api.service';
 
         <div class="legal-actions">
           <button class="btn btn-primary" (click)="accept()">
-            I Accept / Acepto
+            {{ 'legal.accept' | translate }}
           </button>
           <button class="btn btn-secondary" (click)="decline()">
-            I Decline / Rechazo
+            {{ localeService.current() === 'en' ? 'I Decline' : 'Rechazo' }}
           </button>
         </div>
       </div>
@@ -101,6 +104,7 @@ export class LegalDisclaimerComponent {
   constructor(
     private readonly api: ApiService,
     private readonly router: Router,
+    protected readonly localeService: LocaleService,
   ) {}
 
   async accept(): Promise<void> {

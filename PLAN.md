@@ -160,14 +160,17 @@
 
 ---
 
-## Fase 9: Internacionalización i18n
+## Fase 9: Internacionalización i18n ✅
 
-- [ ] **Angular:** Configurar @angular/localize
-- [ ] **Angular:** Extraer textos al archivo de traducción base
-- [ ] **Angular:** Traducir UI a inglés y español
-- [ ] **Angular:** Selector de idioma en settings
+- [x] **Angular:** LocaleService con signal reactivo + carga de JSON vía fetch
+- [x] **Angular:** TranslatePipe impuro para templates (pure: false, actualización reactiva)
+- [x] **Angular:** Archivos de traducción: `assets/i18n/en.json`, `assets/i18n/es.json`
+- [x] **Angular:** APP_INITIALIZER para cargar locale al arranque (persistencia en localStorage)
+- [x] **Angular:** Traducciones en sidebar, dashboard, legal disclaimer (infraestructura lista para el resto)
+- [x] **Angular:** Ruta /settings con selector de idioma (🇬🇧 EN / 🇪🇸 ES)
+- [x] **Angular:** Enlace a settings en footer del sidebar
 
-**Commit:** `f9 — i18n support (en/es)`
+**Commit:** `f9 — Internacionalización i18n (en/es)`
 
 ---
 
