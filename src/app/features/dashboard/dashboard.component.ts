@@ -53,8 +53,8 @@ import { AppStateService } from '../../core/services/app-state.service';
         <h3>Current Network</h3>
         <div class="network-info">
           <span><strong>SSID:</strong> {{ net.ssid }}</span>
-          <span><strong>Gateway:</strong> {{ net.gatewayIp }}</span>
-          <span><strong>Your IP:</strong> {{ net.interfaceIp }}</span>
+          <span><strong>Gateway:</strong> {{ net.gateway_ip }}</span>
+          <span><strong>Your IP:</strong> {{ net.interface_ip }}</span>
           <span><strong>Subnet:</strong> {{ net.subnet }}</span>
         </div>
       </section>

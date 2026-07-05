@@ -1,22 +1,21 @@
 export interface Device {
-  id: string;
   ip: string;
-  mac: string;
-  hostname: string;
-  vendor: string;
-  isGateway: boolean;
-  firstSeen: string;
-  lastSeen: string;
+  mac?: string;
+  hostname?: string;
+  vendor?: string;
+  is_gateway: boolean;
+  first_seen?: string;
+  last_seen?: string;
 }
 
 export interface NetworkInfo {
   ssid: string;
-  gatewayIp: string;
-  gatewayMac: string;
-  subnet: string;
-  interfaceName: string;
-  interfaceIp: string;
-  interfaceMac: string;
+  gateway_ip: string;
+  gateway_mac?: string;
+  subnet?: string;
+  interface_name?: string;
+  interface_ip?: string;
+  interface_mac?: string;
 }
 
 export interface PortScanResult {
@@ -61,4 +60,11 @@ export interface Snapshot {
   capturedAt: string;
   deviceCount: number;
   devices: Device[];
+}
+
+export interface DiscoveryResult {
+  network: NetworkInfo;
+  devices: Device[];
+  device_count: number;
+  scan_duration_ms: number;
 }

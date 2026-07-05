@@ -1,4 +1,7 @@
-from fastapi import APIRouter, HTTPException
+import asyncio
+import json
+
+from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 
 from app.models.discovery import NetworkInfo, DiscoveryResult
@@ -22,3 +25,31 @@ async def scan_network():
         return await discovery_service.scan_devices()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.websocket("/ws/scan")
+async def websocket_scan(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        async def send_progress(message: str):
+            await websocket.send_text(json.dumps({"type": "progress", "message": message}))
+
+        await send_progress("Starting discovery scan...")
+        result = await discovery_service.scan_devices(progress_callback=send_progress)
+
+        await websocket.send_text(json.dumps({
+            "type": "complete",
+            "data": result.model_dump(),
+        }))
+        await websocket.close()
+    except WebSocketDisconnect:
+        pass
+    except Exception as e:
+        try:
+            await websocket.send_text(json.dumps({
+                "type": "error",
+                "message": str(e),
+            }))
+            await websocket.close()
+        except WebSocketDisconnect:
+            pass
