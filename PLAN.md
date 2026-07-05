@@ -57,17 +57,17 @@
 
 ---
 
-## Fase 3: Vulnerabilidades (Detección con NSE)
+## Fase 3: Vulnerabilidades (Detección con NSE) ✅
 
-- [ ] **Python:** Service de vulnerabilidades con NSE scripts (`--script vuln`)
-- [ ] **Python:** Parseo de resultados NSE (CVE IDs, severidad, descripción)
-- [ ] **Python:** Endpoint `POST /api/v1/scan/vulnerabilities`
-- [ ] **Python:** Tests para vulnerability service
-- [ ] **Node:** IPC handler con almacenamiento en DB
-- [ ] **Angular:** Modal de confirmación (reutilizar componente de Fase 2)
-- [ ] **Angular:** Formulario: seleccionar dispositivo de la tabla de discovery
-- [ ] **Angular:** Vista de resultados con tarjetas de vulnerabilidad (CVE, severidad, service, recomendación)
-- [ ] **Angular:** Filtros por severidad (critical/high/medium/low/info)
+- [x] **Python:** Service de vulnerabilidades con NSE scripts (`--script vuln`)
+- [x] **Python:** Parseo de resultados NSE (CVE IDs, severidad, descripción, recomendación)
+- [x] **Python:** Endpoint `POST /api/v1/scan/vulnerabilities` + WebSocket `/ws/vulnerabilities`
+- [x] **Python:** Tests (modelos — 4 tests)
+- [x] **Node:** IPC handler con almacenamiento en DB (crea port_scan + inserta vulnerabilities)
+- [x] **Angular:** Banner de advertencia para escaneo activo
+- [x] **Angular:** Formulario: seleccionar dispositivo + rango de puertos opcional
+- [x] **Angular:** Vista de resultados con tarjetas (CVE badge, severidad, descripción, recomendación)
+- [x] **Angular:** Filtros por severidad (critical/high/medium/low/info)
 
 **Commit:** `f3 — Vulnerability detection module`
 

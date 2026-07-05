@@ -29,7 +29,7 @@ export class ApiService {
     return this.ipc.invoke('scanner:get-scan-types');
   }
 
-  async vulnerabilityScan(params: { targetIp: string }): Promise<ApiResult<any>> {
+  async vulnerabilityScan(params: { targetIp: string; ports?: string }): Promise<ApiResult<any>> {
     return this.ipc.invoke('scanner:vulnerability-scan', params);
   }
 
