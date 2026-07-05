@@ -106,17 +106,17 @@
 
 ---
 
-## Fase 6: Dashboard Principal y Pulido
+## Fase 6: Dashboard Principal y Pulido ✅
 
-- [ ] **Angular:** Dashboard con tarjetas de resumen en vivo
-  - [ ] Dispositivos detectados (conteo + cambios desde último snapshot)
-  - [ ] Último escaneo de vulnerabilidades (conteo por severidad)
-  - [ ] Latencia actual vs promedio histórico
-  - [ ] Eventos recientes (feed en tiempo real)
-- [ ] **Angular:** Navegación lateral persistente
-- [ ] **Angular:** Modo oscuro consistente en toda la UI
-- [ ] **Angular:** Responsive para diferentes tamaños de ventana
-- [ ] **Angular:** Cargar estados vacíos/error/loading en cada vista
+- [x] **Angular:** Dashboard con tarjetas de resumen en vivo
+  - [x] Dispositivos detectados (conteo + cambios desde último snapshot)
+  - [x] Último escaneo de vulnerabilidades (conteo por severidad)
+  - [x] Latencia actual (avg/jitter/packet loss)
+  - [x] Eventos recientes (feed en tiempo real con severidad)
+- [x] **Angular:** Navegación lateral persistente (MainLayout con sidebar)
+- [x] **Angular:** Modo oscuro consistente en toda la UI
+- [x] **Angular:** Responsive con CSS grid auto-fill
+- [x] **Angular:** Estados loading/error en dashboard; cada componente ya tiene los suyos
 
 **Commit:** `f6 — Dashboard & UI polish`
 
