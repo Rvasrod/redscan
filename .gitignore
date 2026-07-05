@@ -34,4 +34,7 @@ Thumbs.db
 
 # Build artifacts
 resources/
-build/
+build/*
+!build/icon.png
+!build/icon.ico
+!build/icon.icns

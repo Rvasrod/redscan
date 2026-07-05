@@ -19,4 +19,8 @@ export function registerIpcHandlers(db: Database, pythonManager: PythonManager):
   ipcMain.handle('app:get-version', () => {
     return { version: '0.1.0', enginePort: pythonManager.port };
   });
+
+  ipcMain.handle('system:get-nmap-status', async () => {
+    return pythonManager.getNmapStatus();
+  });
 }

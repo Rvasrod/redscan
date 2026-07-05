@@ -12,11 +12,13 @@
     "start:electron": "electron .",
     "dev": "concurrently \"npm run start:renderer\" \"wait-on http://localhost:4200 && npm run start:electron\"",
     "dev:python": "cd engine && uvicorn app.main:app --reload --port 8765",
-    "build:python": "cd engine && pyinstaller --onefile --name netsentinel-engine --distpath ../resources app/main.py",
-    "build:electron": "npm run build:renderer && electron-builder",
+    "build:python": "cd engine && pyinstaller netsentinel-engine.spec --distpath ../resources --workpath build/pyinstaller --clean",
+    "build:python:quick": "cd engine && pyinstaller --onefile --name netsentinel-engine --distpath ../resources --collect-all scapy --collect-all nmap app/main.py",
+    "build:electron": "npm run build:renderer && electron-builder --win",
+    "build:electron:all": "npm run build:renderer && electron-builder",
     "build": "npm run build:python && npm run build:electron",
     "test:angular": "ng test",
-    "test:python": "cd engine && pytest",
+    "test:python": "cd engine && pytest -v",
     "lint": "ng lint"
   },
   "dependencies": {

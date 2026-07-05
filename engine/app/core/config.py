@@ -1,5 +1,14 @@
 import os
+import sys
 from dataclasses import dataclass
+from pathlib import Path
+
+
+def _default_db_path() -> str:
+    if getattr(sys, 'frozen', False):
+        parent = Path(sys.executable).parent
+        return str(parent / "netsentinel.db")
+    return os.environ.get("DATABASE_PATH", "netsentinel.db")
 
 
 @dataclass
@@ -19,7 +28,7 @@ class Settings:
 
     @property
     def database_path(self) -> str:
-        return os.environ.get("DATABASE_PATH", "netsentinel.db")
+        return os.environ.get("DATABASE_PATH") or _default_db_path()
 
 
 settings = Settings()

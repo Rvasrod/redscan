@@ -6,17 +6,22 @@ import { Logger } from './logger';
 import { Database } from './database';
 
 const ENGINE_PORT = 8765;
-const HEALTH_CHECK_RETRIES = 20;
+const HEALTH_CHECK_RETRIES = 30;
 const HEALTH_CHECK_INTERVAL_MS = 500;
 
 export class PythonManager {
   private process: ChildProcess | null = null;
   private readonly enginePath: string;
   private readonly db: Database;
+  private _ready = false;
 
   constructor(db: Database) {
     this.db = db;
     this.enginePath = this.resolveEnginePath();
+  }
+
+  get ready(): boolean {
+    return this._ready;
   }
 
   private resolveEnginePath(): string {
@@ -30,16 +35,25 @@ export class PythonManager {
 
   async start(): Promise<void> {
     Logger.info('Starting Python engine...');
+    Logger.info(`Engine path: ${this.enginePath}`);
 
     try {
       if (app.isPackaged) {
         this.process = spawn(this.enginePath, [], {
-          env: { ...process.env, DATABASE_PATH: this.db.path },
+          env: {
+            ...process.env,
+            DATABASE_PATH: this.db.path,
+            PYTHONUNBUFFERED: '1',
+          },
         });
       } else {
         this.process = spawn('python', ['-m', 'uvicorn', 'app.main:app', '--host', '127.0.0.1', '--port', String(ENGINE_PORT)], {
           cwd: path.join(__dirname, '../../engine'),
-          env: { ...process.env, DATABASE_PATH: this.db.path },
+          env: {
+            ...process.env,
+            DATABASE_PATH: this.db.path,
+            PYTHONUNBUFFERED: '1',
+          },
         });
       }
 
@@ -48,21 +62,26 @@ export class PythonManager {
       });
 
       this.process.stderr?.on('data', (data: Buffer) => {
-        Logger.error(`[Python] ${data.toString().trim()}`);
+        const line = data.toString().trim();
+        Logger.error(`[Python] ${line}`);
       });
 
       this.process.on('exit', (code: number | null) => {
         Logger.info(`Python engine exited with code ${code}`);
         this.process = null;
+        this._ready = false;
       });
 
       this.process.on('error', (err: Error) => {
         Logger.error('Failed to start Python engine', err);
+        this._ready = false;
       });
 
       await this.waitForHealth();
+      this._ready = true;
       Logger.info('Python engine is ready');
     } catch (err) {
+      this._ready = false;
       Logger.error('Failed to initialize Python engine', err as Error);
       throw err;
     }
@@ -97,6 +116,30 @@ export class PythonManager {
     });
   }
 
+  async getNmapStatus(): Promise<{ available: boolean; version?: string; error?: string }> {
+    try {
+      const data = await this.httpGet(`http://127.0.0.1:${ENGINE_PORT}/api/v1/system/nmap`);
+      return JSON.parse(data);
+    } catch (err) {
+      return { available: false, error: (err as Error).message };
+    }
+  }
+
+  private httpGet(url: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const req = http.get(url, (res) => {
+        let body = '';
+        res.on('data', (chunk: string) => { body += chunk; });
+        res.on('end', () => resolve(body));
+      });
+      req.on('error', reject);
+      req.setTimeout(3000, () => {
+        req.destroy();
+        reject(new Error('HTTP request timed out'));
+      });
+    });
+  }
+
   async stop(): Promise<void> {
     if (this.process) {
       Logger.info('Stopping Python engine...');
@@ -106,6 +149,7 @@ export class PythonManager {
         this.process.kill('SIGTERM');
       }
       this.process = null;
+      this._ready = false;
     }
   }
 

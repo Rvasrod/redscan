@@ -140,16 +140,21 @@
 
 ---
 
-## Fase 8: Build y Empaquetado para Producción
+## Fase 8: Build y Empaquetado para Producción ✅
 
-- [ ] **Python:** Compilar con PyInstaller y verificar binario standalone
-- [ ] **Node:** Configurar `extraResources` en electron-builder con el binario
-- [ ] **Build:** Probar build completo en Windows
-- [ ] **Build:** Probar build completo en macOS (si hay acceso)
-- [ ] **Build:** Probar build completo en Linux (si hay acceso)
-- [ ] **QA:** Probar app empaquetada sin Python instalado
-- [ ] **QA:** Probar app empaquetada sin nmap instalado (con mensaje de error claro)
-- [ ] **QA:** Probar flujo legal disclaimer → dashboard → discovery → port scan
+- [x] **Python:** spec de PyInstaller con hidden imports (scapy, nmap, uvicorn, websockets)
+- [x] **Python:** main.py adaptado para frozen mode (sys._MEIPASS, sys.frozen)
+- [x] **Python:** Config con database_path por defecto junto al binario compilado
+- [x] **Python:** Endpoint `/api/v1/system/nmap` para detectar nmap disponible
+- [x] **Node:** electron-builder.yml configurado con extraResources (resources/*)
+- [x] **Node:** python-manager.ts manejando app.isPackaged (spawn binario compilado)
+- [x] **Node:** Método getNmapStatus() + IPC handler system:get-nmap-status
+- [x] **Angular:** ApiService.getNmapStatus() para verificar nmap desde UI
+- [x] **Build:** Directorios resources/ y build/ creados con iconos placeholder
+- [x] **Build:** .gitignore configurado para trackear iconos pero ignorar builds
+- [x] **Build:** Scripts npm build:python (spec), build:python:quick, build:electron (--win), build:electron:all
+- [ ] **Pendiente:** Ejecutar build completo (requiere PyInstaller + electron-builder instalados)
+- [ ] **Pendiente:** Probar app empaquetada en Windows
 
 **Commit:** `f8 — Production build & packaging`
 

@@ -85,4 +85,8 @@ export class ApiService {
   async getUnreadCount(): Promise<{ success: boolean; count?: number; error?: string }> {
     return this.ipc.invoke('events:unread-count');
   }
+
+  async getNmapStatus(): Promise<{ available: boolean; version?: string; error?: string }> {
+    return this.ipc.invoke('system:get-nmap-status');
+  }
 }
