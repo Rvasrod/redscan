@@ -5,6 +5,7 @@ import { PythonManager } from '../services/python-manager';
 import { Logger } from '../services/logger';
 import { httpRequest } from '../utils/http';
 import { createEvent } from '../services/events';
+import { SnapshotRepository, DeviceRepository, PortScanRepository, VulnerabilityRepository } from '../services/repositories';
 
 export function registerScannerIpc(ipcMain: IpcMain, db: Database, pythonManager: PythonManager): void {
   ipcMain.handle('scanner:port-scan', async (_event, params: { targetIp: string; ports?: string; scanType?: string; versionDetection?: boolean }) => {
@@ -66,49 +67,37 @@ export function registerScannerIpc(ipcMain: IpcMain, db: Database, pythonManager
 
 function persistVulnerabilityScan(db: Database, result: any): void {
   try {
-    const database = db.getDb();
+    const snapshotRepo = new SnapshotRepository(db);
+    const deviceRepo = new DeviceRepository(db);
+    const portScanRepo = new PortScanRepository(db);
+    const vulnRepo = new VulnerabilityRepository(db);
     const now = new Date().toISOString();
 
-    const latestSnapshot = database.prepare(
-      `SELECT s.id, s.network_id FROM snapshots s
-       JOIN networks n ON n.id = s.network_id
-       WHERE n.gateway_ip = ?
-       ORDER BY s.captured_at DESC LIMIT 1`
-    ).get(result.target_ip) as { id: string; network_id: string } | undefined;
-
+    const latestSnapshot = snapshotRepo.findByGatewayIp(result.target_ip);
     if (!latestSnapshot) {
       Logger.warn(`No snapshot found for ${result.target_ip}, skipping vuln persistence`);
       return;
     }
 
-    const latestDevice = database.prepare(
-      'SELECT id FROM devices WHERE snapshot_id = ? AND ip = ? LIMIT 1'
-    ).get(latestSnapshot.id, result.target_ip) as { id: string } | undefined;
-
+    const latestDevice = deviceRepo.findInSnapshot(latestSnapshot.id, result.target_ip);
     if (!latestDevice) {
       Logger.warn(`No device record for ${result.target_ip}, skipping vuln persistence`);
       return;
     }
 
     const portScanId = randomUUID();
-    database.prepare(
-      `INSERT INTO port_scans (id, snapshot_id, device_id, scan_type, started_at, completed_at, results, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run(
-      portScanId, latestSnapshot.id, latestDevice.id,
-      'vulnerability', now, now, JSON.stringify(result), 'completed',
-    );
-
-    const insertVuln = database.prepare(
-      `INSERT INTO vulnerabilities (id, port_scan_id, port, service, cve_id, severity, description, recommendation)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-    );
+    portScanRepo.insert({
+      id: portScanId, snapshot_id: latestSnapshot.id, device_id: latestDevice.id,
+      scan_type: 'vulnerability', started_at: now, completed_at: now,
+      results: JSON.stringify(result), status: 'completed',
+    });
 
     for (const vuln of result.vulnerabilities) {
-      insertVuln.run(
-        randomUUID(), portScanId, vuln.port, vuln.service,
-        vuln.cve_id, vuln.severity, vuln.description, vuln.recommendation,
-      );
+      vulnRepo.insert({
+        id: randomUUID(), port_scan_id: portScanId, port: vuln.port,
+        service: vuln.service, cve_id: vuln.cve_id, severity: vuln.severity,
+        description: vuln.description, recommendation: vuln.recommendation,
+      });
     }
 
     if (result.vulnerabilities.length > 0) {
@@ -118,8 +107,7 @@ function persistVulnerabilityScan(db: Database, result: any): void {
       if (criticalOnes.length > 0) {
         createEvent(db, {
           networkId: latestSnapshot.network_id,
-          type: 'vuln_critical',
-          severity: 'critical',
+          type: 'vuln_critical', severity: 'critical',
           title: `Critical vulnerability found on ${result.target_ip}`,
           description: `${criticalOnes.length} critical CVE(s) found — ${criticalOnes.map((v: any) => v.cve_id).join(', ')}`,
         });
@@ -128,8 +116,7 @@ function persistVulnerabilityScan(db: Database, result: any): void {
       if (highOnes.length > 0) {
         createEvent(db, {
           networkId: latestSnapshot.network_id,
-          type: 'vuln_critical',
-          severity: 'warning',
+          type: 'vuln_critical', severity: 'warning',
           title: `High severity vulnerability found on ${result.target_ip}`,
           description: `${highOnes.length} high severity CVE(s) found`,
         });
@@ -144,44 +131,34 @@ function persistVulnerabilityScan(db: Database, result: any): void {
 
 function persistPortScan(db: Database, result: any): void {
   try {
-    const database = db.getDb();
+    const snapshotRepo = new SnapshotRepository(db);
+    const deviceRepo = new DeviceRepository(db);
+    const portScanRepo = new PortScanRepository(db);
     const now = new Date().toISOString();
 
-    const latestSnapshot = database.prepare(
-      `SELECT s.id, s.network_id FROM snapshots s
-       JOIN networks n ON n.id = s.network_id
-       WHERE n.gateway_ip = ?
-       ORDER BY s.captured_at DESC LIMIT 1`
-    ).get(result.target_ip) as { id: string; network_id: string } | undefined;
-
+    const latestSnapshot = snapshotRepo.findByGatewayIp(result.target_ip);
     if (!latestSnapshot) {
       Logger.warn(`No snapshot found for ${result.target_ip}, skipping persistence`);
       return;
     }
 
-    const latestDevice = database.prepare(
-      'SELECT id FROM devices WHERE snapshot_id = ? AND ip = ? LIMIT 1'
-    ).get(latestSnapshot.id, result.target_ip) as { id: string } | undefined;
-
+    const latestDevice = deviceRepo.findInSnapshot(latestSnapshot.id, result.target_ip);
     if (!latestDevice) {
       Logger.warn(`No device record for ${result.target_ip}, skipping persistence`);
       return;
     }
 
     const portScanId = randomUUID();
-    database.prepare(
-      `INSERT INTO port_scans (id, snapshot_id, device_id, scan_type, started_at, completed_at, results, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run(
-      portScanId, latestSnapshot.id, latestDevice.id,
-      result.scan_type, now, now, JSON.stringify(result), 'completed',
-    );
+    portScanRepo.insert({
+      id: portScanId, snapshot_id: latestSnapshot.id, device_id: latestDevice.id,
+      scan_type: result.scan_type, started_at: now, completed_at: now,
+      results: JSON.stringify(result), status: 'completed',
+    });
 
     if (result.open_ports && result.open_ports.length > 0) {
       createEvent(db, {
         networkId: latestSnapshot.network_id,
-        type: 'port_new',
-        severity: 'info',
+        type: 'port_new', severity: 'info',
         title: `Open ports found on ${result.target_ip}`,
         description: `${result.open_ports.length} open port(s): ${result.open_ports.map((p: any) => `${p.port}/${p.protocol ?? 'tcp'}`).join(', ')}`,
       });

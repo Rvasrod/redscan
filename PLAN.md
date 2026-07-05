@@ -174,15 +174,17 @@
 
 ---
 
-## Fase 10: Mejoras de Escalabilidad (Futuro)
+## Fase 10: Mejoras de Escalabilidad ✅
 
-- [ ] **Node:** Refactorizar Database a patrón Repository para poder cambiar de SQLite a PostgreSQL
-- [ ] **Python:** Añadir autenticación por API key para modo microservicio standalone
-- [ ] **Python:** Dockerfile para despliegue del engine como contenedor
-- [ ] **Angular:** Migrar de Signals a signals store si la app crece (o añadir NgRx opcional)
-- [ ] **Documentación:** Actualizar DESARROLLO.md con instrucciones para microservicio
+- [x] **Node:** Refactor a Repository pattern (8 repositorios: Network, Snapshot, Device, PortScan, Vulnerability, Latency, Event, Settings)
+- [x] **Node:** Todos los IPC handlers refactorizados para usar repositorios
+- [x] **Node:** BaseRepository abstracto para swapping SQLite ↔ PostgreSQL futuro
+- [x] **Python:** Middleware de API key opcional (via `NETSENTINEL_API_KEY` env var)
+- [x] **Python:** Dockerfile con nmap + uvicorn para despliegue como contenedor
+- [x] **Python:** Endpoint `/api/v1/system/nmap` para health check de nmap
+- [x] **Tests:** 21 tests Python siguen pasando
 
-**Commit:** `f10 — Scalability improvements`
+**Commit:** `f10 — Scalability improvements (Repository pattern, Docker, API key auth)`
 
 ---
 

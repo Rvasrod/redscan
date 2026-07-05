@@ -30,5 +30,13 @@ class Settings:
     def database_path(self) -> str:
         return os.environ.get("DATABASE_PATH") or _default_db_path()
 
+    @property
+    def api_key(self) -> str | None:
+        return os.environ.get("NETSENTINEL_API_KEY") or None
+
+    @property
+    def auth_enabled(self) -> bool:
+        return self.api_key is not None
+
 
 settings = Settings()

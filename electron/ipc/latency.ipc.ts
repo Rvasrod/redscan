@@ -4,6 +4,7 @@ import { Database } from '../services/database';
 import { Logger } from '../services/logger';
 import { httpRequest } from '../utils/http';
 import { createEvent } from '../services/events';
+import { NetworkRepository, LatencyRepository } from '../services/repositories';
 
 export function registerLatencyIpc(ipcMain: IpcMain, db: Database, pythonManager: { port: number }): void {
   ipcMain.handle('latency:measure', async (_event, params: { target?: string }) => {
@@ -24,31 +25,26 @@ export function registerLatencyIpc(ipcMain: IpcMain, db: Database, pythonManager
 
 function persistLatency(db: Database, measurement: any): void {
   try {
-    const database = db.getDb();
+    const networkRepo = new NetworkRepository(db);
+    const latencyRepo = new LatencyRepository(db);
 
-    const latestNetwork = database.prepare(
-      'SELECT id FROM networks ORDER BY last_seen DESC LIMIT 1'
-    ).get() as { id: string } | undefined;
-
+    const latestNetwork = networkRepo.findLatest();
     if (!latestNetwork) {
       Logger.warn('No network found for latency persistence');
       return;
     }
 
-    database.prepare(
-      `INSERT INTO latency_meas (id, network_id, timestamp, target, avg_latency_ms, min_latency_ms, max_latency_ms, jitter_ms, packet_loss_pct)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run(
-      randomUUID(), latestNetwork.id, measurement.timestamp, measurement.target,
-      measurement.avg_latency_ms, measurement.min_latency_ms, measurement.max_latency_ms,
-      measurement.jitter_ms, measurement.packet_loss_pct,
-    );
+    latencyRepo.insert({
+      id: randomUUID(), network_id: latestNetwork.id, timestamp: measurement.timestamp,
+      target: measurement.target, avg_latency_ms: measurement.avg_latency_ms,
+      min_latency_ms: measurement.min_latency_ms, max_latency_ms: measurement.max_latency_ms,
+      jitter_ms: measurement.jitter_ms, packet_loss_pct: measurement.packet_loss_pct,
+    });
 
     if (measurement.avg_latency_ms > 150) {
       createEvent(db, {
         networkId: latestNetwork.id,
-        type: 'latency_high',
-        severity: 'warning',
+        type: 'latency_high', severity: 'warning',
         title: `High latency detected (${Math.round(measurement.avg_latency_ms)}ms)`,
         description: `Target: ${measurement.target} — Avg: ${measurement.avg_latency_ms.toFixed(1)}ms, Jitter: ${measurement.jitter_ms.toFixed(1)}ms, Loss: ${measurement.packet_loss_pct.toFixed(1)}%`,
       });
@@ -57,8 +53,7 @@ function persistLatency(db: Database, measurement: any): void {
     if (measurement.packet_loss_pct > 5) {
       createEvent(db, {
         networkId: latestNetwork.id,
-        type: 'latency_high',
-        severity: 'critical',
+        type: 'latency_high', severity: 'critical',
         title: `Packet loss detected (${measurement.packet_loss_pct.toFixed(1)}%)`,
         description: `Target: ${measurement.target} — ${measurement.packet_loss_pct.toFixed(1)}% packet loss`,
       });

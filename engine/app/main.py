@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.router import api_router
 from app.core.config import settings
 from app.core.logger import logger
+from app.core.auth import APIKeyMiddleware
 
 
 def _resolve_app_root() -> Path:
@@ -32,6 +33,10 @@ async def lifespan(app: FastAPI):
 
     nmap_available = _check_nmap()
     logger.info(f"nmap available: {nmap_available}")
+    if settings.auth_enabled:
+        logger.info("API key authentication is ENABLED")
+    else:
+        logger.info("API key authentication is disabled (set NETSENTINEL_API_KEY to enable)")
 
     yield
     logger.info("NetSentinel engine shutting down")
@@ -72,6 +77,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(APIKeyMiddleware)
 
 app.include_router(api_router, prefix="/api/v1")
 

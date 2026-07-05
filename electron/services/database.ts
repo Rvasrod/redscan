@@ -2,6 +2,7 @@ import DatabaseConstructor from 'better-sqlite3';
 import * as path from 'path';
 import { app } from 'electron';
 import { Logger } from './logger';
+import { SettingsRepository } from './repositories';
 
 export class Database {
   private db: DatabaseConstructor.Database | null = null;
@@ -121,15 +122,9 @@ export class Database {
       );
     `);
 
-    this.setDefault('legal_disclaimer_accepted', 'false');
-    this.setDefault('active_scan_confirmation', 'true');
-  }
-
-  private setDefault(key: string, value: string): void {
-    const existing = this.db!.prepare('SELECT value FROM settings WHERE key = ?').get(key);
-    if (!existing) {
-      this.db!.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run(key, value);
-    }
+    const settingsRepo = new SettingsRepository(this);
+    settingsRepo.setDefault('legal_disclaimer_accepted', 'false');
+    settingsRepo.setDefault('active_scan_confirmation', 'true');
   }
 
   close(): void {
