@@ -1,9 +1,7 @@
-import asyncio
-import platform
-import subprocess
-import time
 from datetime import datetime, timezone
 from typing import Optional
+
+from icmplib import async_ping
 
 from app.core.logger import logger
 from app.core.exceptions import LatencyError
@@ -31,23 +29,15 @@ class LatencyService:
         resolved = await self._resolve_target(target)
         logger.info(f"Measuring latency to {target} (resolved: {resolved})")
         try:
-            times: list[float] = []
-            failed = 0
+            host = await async_ping(
+                resolved,
+                count=self.ping_count,
+                interval=0.2,
+                timeout=2,
+                privileged=True,
+            )
 
-            for i in range(self.ping_count):
-                try:
-                    elapsed = await self._ping(resolved)
-                    times.append(elapsed)
-                except LatencyError:
-                    failed += 1
-                    logger.debug(f"Ping {i + 1}/{self.ping_count} to {resolved} failed")
-                if i < self.ping_count - 1:
-                    await asyncio.sleep(0.2)
-
-            total = self.ping_count
-            loss = (failed / total) * 100
-
-            if not times:
+            if host.packets_received == 0:
                 return LatencyMeasurement(
                     target=target,
                     avg_latency_ms=0,
@@ -58,40 +48,19 @@ class LatencyService:
                     timestamp=datetime.now(timezone.utc).isoformat(),
                 )
 
-            avg = sum(times) / len(times)
-            min_t = min(times)
-            max_t = max(times)
-            jitter = max_t - min_t
-
             return LatencyMeasurement(
                 target=target,
-                avg_latency_ms=round(avg, 2),
-                min_latency_ms=round(min_t, 2),
-                max_latency_ms=round(max_t, 2),
-                jitter_ms=round(jitter, 2),
-                packet_loss_pct=round(loss, 1),
+                avg_latency_ms=round(host.avg_rtt, 2),
+                min_latency_ms=round(host.min_rtt, 2),
+                max_latency_ms=round(host.max_rtt, 2),
+                jitter_ms=round(host.jitter, 2),
+                packet_loss_pct=round(host.packet_loss * 100, 1),
                 timestamp=datetime.now(timezone.utc).isoformat(),
             )
+        except PermissionError as e:
+            raise LatencyError(
+                "Latency measurement requires administrator/root privileges. "
+                "Run the application as administrator (Windows) or with sudo (Linux/macOS)."
+            ) from e
         except Exception as e:
             raise LatencyError(f"Latency measurement failed: {e}") from e
-
-    async def _ping(self, target: str) -> float:
-        system = platform.system().lower()
-        if system == "windows":
-            cmd = ["ping", "-n", "1", "-w", "2000", target]
-        else:
-            cmd = ["ping", "-c", "1", "-W", "2", target]
-
-        start = time.time()
-        try:
-            proc = await asyncio.create_subprocess_exec(
-                *cmd,
-                stdout=asyncio.subprocess.DEVNULL,
-                stderr=asyncio.subprocess.DEVNULL,
-            )
-            await proc.communicate()
-            if proc.returncode == 0:
-                return (time.time() - start) * 1000
-            raise LatencyError(f"Ping to {target} failed")
-        except FileNotFoundError:
-            raise LatencyError("ping command not found")

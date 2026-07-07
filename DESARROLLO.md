@@ -527,6 +527,13 @@ No se necesitan cambios de código — la API ya es autocontenida.
 
 ## Registro de Desarrollo (Changelog)
 
+### 2026-07-07 — Corrección de latencia
+
+- Sustituido `_ping()` basado en `asyncio.create_subprocess_exec` por `icmplib.async_ping()` con socket ICMP raw async
+- Eliminado overhead de ~15-35ms por spawn de proceso `ping.exe` en cada muestra
+- Jitter ahora calculado según RFC 3550 (variación entre muestras consecutivas) por `icmplib`
+- Añadida dependencia `icmplib>=3.0.0` a requirements.txt
+
 ### 2026-07-07 — Bugfix Sprint
 
 - Revisión de código completa en 3 capas (Electron + Angular + Python FastAPI)
@@ -596,6 +603,7 @@ A continuación se documentan los bugs encontrados durante la revisión de códi
 | 9 | **Electron (scanner.ipc)** | Eventos `high` y `critical` usan el mismo `type: 'vuln_critical'` | Copiar y pegar sin cambiar el tipo de evento | Usar `'vuln_high'` para severidad high |
 | 10 | **Angular (history)** | `viewStack().pop()` muta el array interno del signal | Signals solo detectan cambios cuando se llama a `.set()`, `.update()` o `.mutate()`. `.pop()` muta in-place | Usar `viewStack.update(stack => stack.slice(0, -1))` |
 | 11 | **Angular (history)** | `acknowledged: 1` (number) en vez de `true` (boolean) | El modelo `NetworkEvent` define `acknowledged: boolean` pero se asignaba `1` | Usar `true` |
+| 12 | **Python (latency)** | Latencia medida ~20-30 ms más alta de lo real, jitter incorrecto | `_ping()` medía el tiempo de vida de un proceso `ping` del SO spawneado por muestra (overhead de `create_subprocess_exec`), y el jitter se calculaba como rango (`max - min`) en vez de variación entre muestras consecutivas (RFC 3550) | Sustituir por `icmplib.async_ping()`, que usa un socket ICMP raw async sin spawnear procesos, y calcula jitter correctamente |
 
 ---
 
@@ -610,6 +618,7 @@ Estas operaciones requieren admin/root:
 | Escaneo ARP con scapy (raw sockets) | Ejecutar como Administrador | `sudo` |
 | Escaneo TCP SYN (-sS) | Ejecutar como Administrador | `sudo` |
 | Scripts NSE de vulnerabilidades | Ejecutar como Administrador | `sudo` |
+| Medición de latencia ICMP (icmplib) | Ejecutar como Administrador | `sudo` |
 
 Para ejecutar con admin en Windows:
 ```powershell

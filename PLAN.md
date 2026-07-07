@@ -229,10 +229,11 @@
 - [x] **Bug 11 (Medium):** `src/app/features/history/history.component.ts` — `acknowledged: 1` (number vs boolean)
 - [x] **Bug 12 (Medium):** `src/app/features/port-scan/port-scan.component.ts` — dead code + `targetScanType` no es signal
 - [x] **Bug 13 (Medium):** `src/app/core/guards/legal-disclaimer.guard.ts` — sin try/catch
-- [ ] **Verificación:** `npm run build:renderer` sin errores
-- [ ] **Verificación:** `cd engine && pytest -v` pasa todos los tests
+- [x] **Bug 14 (High):** `engine/app/services/latency.py` — latencia inflada por `subprocess` + jitter como rango
+- [x] **Verificación:** `npm run build:renderer` sin errores
+- [x] **Verificación:** `cd engine && pytest -v` pasa todos los tests
 
-**Commit:** `f13 — Bugfix sprint: 13 bugs corregidos`
+**Commit:** `f13 — Bugfix sprint: 14 bugs corregidos`
 
 ---
 
