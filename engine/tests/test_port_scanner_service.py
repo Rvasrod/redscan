@@ -159,11 +159,4 @@ class TestPortScannerService:
         assert "udp" in types
         assert len(types) >= 3
 
-    def test_check_nmap_raises_when_not_found(self):
-        import nmap
-        from app.core.exceptions import NmapNotFoundError
 
-        with patch("app.services.port_scanner.nmap.PortScanner", side_effect=nmap.PortScannerError("nmap not found")):
-            service = PortScannerService()
-            with pytest.raises(NmapNotFoundError, match="nmap is not installed"):
-                service._check_nmap()

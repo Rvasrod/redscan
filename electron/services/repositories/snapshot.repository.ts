@@ -25,6 +25,12 @@ export class SnapshotRepository extends BaseRepository {
     ).get(networkId, excludeId) as SnapshotRow | undefined;
   }
 
+  findLatest(): SnapshotRow | undefined {
+    return this.database.prepare(
+      'SELECT * FROM snapshots ORDER BY captured_at DESC LIMIT 1'
+    ).get() as SnapshotRow | undefined;
+  }
+
   findByGatewayIp(gatewayIp: string): { id: string; network_id: string } | undefined {
     return this.database.prepare(
       `SELECT s.id, s.network_id FROM snapshots s

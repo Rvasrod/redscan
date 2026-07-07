@@ -1,3 +1,4 @@
+import asyncio
 import os
 import time
 from typing import Optional
@@ -49,11 +50,16 @@ class PortScannerService:
             if progress_callback:
                 await progress_callback(f"Scanning {request.target_ip}:{ports_arg}...")
 
-            nm = nmap.PortScanner(nmap_search_path=_get_nmap_search_path())
-            result = nm.scan(
-                hosts=request.target_ip,
-                ports=ports_arg,
-                arguments=base_args,
+            loop = asyncio.get_running_loop()
+            nm = await loop.run_in_executor(
+                None, lambda: nmap.PortScanner(nmap_search_path=_get_nmap_search_path())
+            )
+            result = await loop.run_in_executor(
+                None, lambda: nm.scan(
+                    hosts=request.target_ip,
+                    ports=ports_arg,
+                    arguments=base_args,
+                )
             )
 
             duration = (time.time() - start) * 1000

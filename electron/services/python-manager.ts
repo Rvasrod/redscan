@@ -11,6 +11,8 @@ const HEALTH_CHECK_INTERVAL_MS = 500;
 
 export class PythonManager {
   private process: ChildProcess | null = null;
+  private processExitPromise: Promise<void> | null = null;
+  private resolveProcessExit: (() => void) | null = null;
   private readonly enginePath: string;
   private readonly db: Database;
   private _ready = false;
@@ -72,10 +74,14 @@ export class PythonManager {
         Logger.error(`[Python] ${line}`);
       });
 
+      this.processExitPromise = new Promise(resolve => { this.resolveProcessExit = resolve; });
       this.process.on('exit', (code: number | null) => {
         Logger.info(`Python engine exited with code ${code}`);
         this.process = null;
         this._ready = false;
+        this.resolveProcessExit?.();
+        this.resolveProcessExit = null;
+        this.processExitPromise = null;
       });
 
       this.process.on('error', (err: Error) => {
@@ -149,12 +155,18 @@ export class PythonManager {
   async stop(): Promise<void> {
     if (this.process) {
       Logger.info('Stopping Python engine...');
+      const exitPromise = this.processExitPromise;
       try {
         await this.shutdownViaApi();
       } catch {
         this.process.kill('SIGTERM');
       }
-      this.process = null;
+      if (exitPromise) {
+        await Promise.race([
+          exitPromise,
+          new Promise(resolve => setTimeout(resolve, 5000)),
+        ]);
+      }
       this._ready = false;
     }
   }

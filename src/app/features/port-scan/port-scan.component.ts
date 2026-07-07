@@ -96,14 +96,8 @@ interface ScanResult {
       @if (devices().length > 0) {
         <section class="results-header">
           <h2>{{ 'portScan.resultsFor' | translate }} {{ lastTarget() }}</h2>
-          <span class="scan-info">{{ 'portScan.scanType' | translate }}: {{ targetScanType | translate }} | {{ 'portScan.completedIn' | translate }} {{ scanDuration() }}</span>
+          <span class="scan-info">{{ 'portScan.scanType' | translate }}: {{ targetScanType() | translate }} | {{ 'portScan.completedIn' | translate }} {{ scanDuration() }}</span>
         </section>
-
-        @if (devices().length === 0 && !isLoading()) {
-          <div class="empty">
-            <p>{{ 'portScan.noOpenPorts' | translate }}</p>
-          </div>
-        }
 
         <div class="table-wrapper">
           <table class="port-table">
@@ -127,9 +121,13 @@ interface ScanResult {
             </tbody>
           </table>
         </div>
+      } @else if (!isLoading() && lastTarget()) {
+        <div class="empty">
+          <p>{{ 'portScan.noOpenPorts' | translate }}</p>
+        </div>
       }
 
-      @if (!isLoading() && devices().length === 0 && !error()) {
+      @if (!isLoading() && devices().length === 0 && !lastTarget() && !error()) {
         <div class="empty">
           <p>{{ 'portScan.startPrompt' | translate }}</p>
         </div>
@@ -200,7 +198,7 @@ export class PortScanComponent implements OnInit {
   versionDetection = false;
 
   lastTarget = signal('');
-  targetScanType = '';
+  targetScanType = signal('');
   scanDuration = signal('');
 
   async ngOnInit(): Promise<void> {
@@ -220,7 +218,7 @@ export class PortScanComponent implements OnInit {
     this.error.set(null);
     this.devices.set([]);
     this.lastTarget.set(this.targetIp);
-    this.targetScanType = this.typeKey(this.scanType);
+    this.targetScanType.set(this.typeKey(this.scanType));
     this.scanDuration.set('');
 
     const result = await this.api.portScan({

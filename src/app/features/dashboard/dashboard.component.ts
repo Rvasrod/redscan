@@ -173,12 +173,23 @@ export class DashboardComponent implements OnInit {
 
       const currentNet = this.state.currentNetwork();
       const networksResult = await this.api.getNetworks();
-      const latestNetwork = currentNet || (networksResult.success && networksResult.data?.[0]);
+      const allNetworks = (networksResult.success && networksResult.data) || [];
 
-      if (latestNetwork) {
+      let networkId = '';
+      if (currentNet && allNetworks.length > 0) {
+        const matched = allNetworks.find((n: any) =>
+          n.ssid === currentNet.ssid && n.gateway_ip === currentNet.gateway_ip
+        );
+        if (matched) networkId = matched.id;
+      }
+      if (!networkId && allNetworks.length > 0) {
+        networkId = allNetworks[0].id;
+      }
+
+      if (networkId) {
         const [snapshotsResult, eventsResult] = await Promise.all([
-          this.api.getSnapshots(latestNetwork.id || ''),
-          this.api.getEvents(latestNetwork.id || ''),
+          this.api.getSnapshots(networkId),
+          this.api.getEvents(networkId),
         ]);
 
         if (snapshotsResult.success && snapshotsResult.data) {
@@ -203,26 +214,26 @@ export class DashboardComponent implements OnInit {
             if (detailResult.success && detailResult.data) {
               this.state.setDevices(detailResult.data.devices || []);
             }
-
-            const scanData = latest.data ? JSON.parse(latest.data) : null;
-            if (scanData?.vulnerabilities) {
-              this.vulnCount.set(scanData.vulnerabilities.length);
-              const bySeverity: Record<string, number> = {};
-              for (const v of scanData.vulnerabilities) {
-                bySeverity[v.severity] = (bySeverity[v.severity] || 0) + 1;
-              }
-              const parts: string[] = [];
-              for (const s of ['critical', 'high', 'medium', 'low']) {
-                if (bySeverity[s]) parts.push(`${bySeverity[s]} ${s}`);
-              }
-              this.vulnBreakdown.set(parts.join(', ') || '');
-            }
           }
         }
 
         if (eventsResult.success && eventsResult.data) {
-          this.events.set(eventsResult.data.slice(0, 10));
-          this.eventCount.set(eventsResult.data.length);
+          const allEvents = eventsResult.data as any[];
+          this.events.set(allEvents.slice(0, 10));
+          this.eventCount.set(allEvents.length);
+
+          const vulnEvents = allEvents.filter((e: any) =>
+            e.type === 'vuln_critical' || e.type === 'vuln_high'
+          );
+          if (vulnEvents.length > 0) {
+            this.vulnCount.set(vulnEvents.length);
+            const critical = vulnEvents.filter((e: any) => e.severity === 'critical').length;
+            const high = vulnEvents.filter((e: any) => e.severity === 'warning').length;
+            const parts: string[] = [];
+            if (critical) parts.push(`${critical} critical`);
+            if (high) parts.push(`${high} high`);
+            this.vulnBreakdown.set(parts.join(', ') || '');
+          }
         }
       }
 

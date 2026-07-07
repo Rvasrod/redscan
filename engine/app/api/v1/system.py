@@ -1,4 +1,4 @@
-import asyncio
+import os
 import sys
 
 from fastapi import APIRouter
@@ -27,5 +27,4 @@ async def health_check():
 @router.post("/shutdown")
 async def shutdown():
     logger.info("Received shutdown request")
-    asyncio.get_event_loop().call_later(0.5, lambda: sys.exit(0))
-    return {"status": "shutting_down"}
+    os._exit(0)

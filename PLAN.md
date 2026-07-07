@@ -214,21 +214,21 @@
 
 ---
 
-## Fase 13: Bugfix Sprint 🔄
+## Fase 13: Bugfix Sprint ✅
 
-- [ ] **Bug 1 (High):** `electron/preload.ts` — `off()` no elimina listeners (memory leak)
-- [ ] **Bug 2 (Critical):** `electron/ipc/scanner.ipc.ts` — persistencia solo funciona para gateway
-- [ ] **Bug 3 (High):** `src/app/features/dashboard/dashboard.component.ts` — vulnerabilidades siempre 0
-- [ ] **Bug 4 (High):** `src/app/features/dashboard/dashboard.component.ts` — `NetworkInfo.id` undefined
-- [ ] **Bug 5 (Critical):** `engine/app/services/port_scanner.py` + `vulnerability.py` — nmap bloquea event loop
-- [ ] **Bug 6 (High):** `engine/app/api/v1/system.py` — shutdown abrupto con `sys.exit(0)`
-- [ ] **Bug 7 (High):** `electron/services/python-manager.ts` — `stop()` no espera proceso hijo
-- [ ] **Bug 8 (High):** `engine/tests/test_port_scanner_service.py` — método inexistente `_check_nmap`
-- [ ] **Bug 9 (Medium):** `electron/ipc/scanner.ipc.ts` — eventos high/critical mismo `type`
-- [ ] **Bug 10 (High):** `src/app/features/history/history.component.ts` — `viewStack().pop()` muta signal
-- [ ] **Bug 11 (Medium):** `src/app/features/history/history.component.ts` — `acknowledged: 1` (number vs boolean)
-- [ ] **Bug 12 (Medium):** `src/app/features/port-scan/port-scan.component.ts` — dead code + `targetScanType` no es signal
-- [ ] **Bug 13 (Medium):** `src/app/core/guards/legal-disclaimer.guard.ts` — sin try/catch
+- [x] **Bug 1 (High):** `electron/preload.ts` — `off()` no elimina listeners (memory leak)
+- [x] **Bug 2 (Critical):** `electron/ipc/scanner.ipc.ts` — persistencia solo funciona para gateway
+- [x] **Bug 3 (High):** `src/app/features/dashboard/dashboard.component.ts` — vulnerabilidades siempre 0
+- [x] **Bug 4 (High):** `src/app/features/dashboard/dashboard.component.ts` — `NetworkInfo.id` undefined
+- [x] **Bug 5 (Critical):** `engine/app/services/port_scanner.py` + `vulnerability.py` — nmap bloquea event loop
+- [x] **Bug 6 (High):** `engine/app/api/v1/system.py` — shutdown abrupto con `sys.exit(0)`
+- [x] **Bug 7 (High):** `electron/services/python-manager.ts` — `stop()` no espera proceso hijo
+- [x] **Bug 8 (High):** `engine/tests/test_port_scanner_service.py` — método inexistente `_check_nmap`
+- [x] **Bug 9 (Medium):** `electron/ipc/scanner.ipc.ts` — eventos high/critical mismo `type`
+- [x] **Bug 10 (High):** `src/app/features/history/history.component.ts` — `viewStack().pop()` muta signal
+- [x] **Bug 11 (Medium):** `src/app/features/history/history.component.ts` — `acknowledged: 1` (number vs boolean)
+- [x] **Bug 12 (Medium):** `src/app/features/port-scan/port-scan.component.ts` — dead code + `targetScanType` no es signal
+- [x] **Bug 13 (Medium):** `src/app/core/guards/legal-disclaimer.guard.ts` — sin try/catch
 - [ ] **Verificación:** `npm run build:renderer` sin errores
 - [ ] **Verificación:** `cd engine && pytest -v` pasa todos los tests
 

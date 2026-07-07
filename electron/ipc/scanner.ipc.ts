@@ -68,6 +68,30 @@ export function registerScannerIpc(ipcMain: IpcMain, db: Database, pythonManager
   });
 }
 
+function findSnapshotAndDevice(snapshotRepo: SnapshotRepository, deviceRepo: DeviceRepository, targetIp: string): { snapshot: { id: string; network_id: string }; device: { id: string } } | null {
+  const latestSnapshot = snapshotRepo.findLatest();
+  if (!latestSnapshot) {
+    Logger.warn(`No snapshots found, skipping persistence for ${targetIp}`);
+    return null;
+  }
+
+  const deviceInLatest = deviceRepo.findInSnapshot(latestSnapshot.id, targetIp);
+  if (deviceInLatest) {
+    return { snapshot: { id: latestSnapshot.id, network_id: latestSnapshot.network_id }, device: deviceInLatest };
+  }
+
+  const byGateway = snapshotRepo.findByGatewayIp(targetIp);
+  if (byGateway && byGateway.id !== latestSnapshot.id) {
+    const deviceInGateway = deviceRepo.findInSnapshot(byGateway.id, targetIp);
+    if (deviceInGateway) {
+      return { snapshot: byGateway, device: deviceInGateway };
+    }
+  }
+
+  Logger.warn(`No device record for ${targetIp}, skipping persistence`);
+  return null;
+}
+
 function persistVulnerabilityScan(db: Database, result: any): void {
   try {
     const snapshotRepo = new SnapshotRepository(db);
@@ -76,40 +100,31 @@ function persistVulnerabilityScan(db: Database, result: any): void {
     const vulnRepo = new VulnerabilityRepository(db);
     const now = new Date().toISOString();
 
-    const latestSnapshot = snapshotRepo.findByGatewayIp(result.target_ip);
-    if (!latestSnapshot) {
-      Logger.warn(`No snapshot found for ${result.target_ip}, skipping vuln persistence`);
-      return;
-    }
-
-    const latestDevice = deviceRepo.findInSnapshot(latestSnapshot.id, result.target_ip);
-    if (!latestDevice) {
-      Logger.warn(`No device record for ${result.target_ip}, skipping vuln persistence`);
-      return;
-    }
+    const found = findSnapshotAndDevice(snapshotRepo, deviceRepo, result.target_ip);
+    if (!found) return;
 
     const portScanId = randomUUID();
     portScanRepo.insert({
-      id: portScanId, snapshot_id: latestSnapshot.id, device_id: latestDevice.id,
+      id: portScanId, snapshot_id: found.snapshot.id, device_id: found.device.id,
       scan_type: 'vulnerability', started_at: now, completed_at: now,
       results: JSON.stringify(result), status: 'completed',
     });
 
-    for (const vuln of result.vulnerabilities) {
-      vulnRepo.insert({
-        id: randomUUID(), port_scan_id: portScanId, port: vuln.port,
-        service: vuln.service, cve_id: vuln.cve_id, severity: vuln.severity,
-        description: vuln.description, recommendation: vuln.recommendation,
-      });
-    }
+    if (result.vulnerabilities && result.vulnerabilities.length > 0) {
+      for (const vuln of result.vulnerabilities) {
+        vulnRepo.insert({
+          id: randomUUID(), port_scan_id: portScanId, port: vuln.port,
+          service: vuln.service, cve_id: vuln.cve_id, severity: vuln.severity,
+          description: vuln.description, recommendation: vuln.recommendation,
+        });
+      }
 
-    if (result.vulnerabilities.length > 0) {
       const criticalOnes = result.vulnerabilities.filter((v: any) => v.severity === 'critical');
       const highOnes = result.vulnerabilities.filter((v: any) => v.severity === 'high');
 
       if (criticalOnes.length > 0) {
         createEvent(db, {
-          networkId: latestSnapshot.network_id,
+          networkId: found.snapshot.network_id,
           type: 'vuln_critical', severity: 'critical',
           title: `Critical vulnerability found on ${result.target_ip}`,
           description: `${criticalOnes.length} critical CVE(s) found — ${criticalOnes.map((v: any) => v.cve_id).join(', ')}`,
@@ -118,15 +133,15 @@ function persistVulnerabilityScan(db: Database, result: any): void {
 
       if (highOnes.length > 0) {
         createEvent(db, {
-          networkId: latestSnapshot.network_id,
-          type: 'vuln_critical', severity: 'warning',
+          networkId: found.snapshot.network_id,
+          type: 'vuln_high', severity: 'warning',
           title: `High severity vulnerability found on ${result.target_ip}`,
           description: `${highOnes.length} high severity CVE(s) found`,
         });
       }
     }
 
-    Logger.info(`Persisted ${result.total_found} vulns for ${result.target_ip} (scan ${portScanId})`);
+    Logger.info(`Persisted ${result.vulnerabilities?.length ?? 0} vulns for ${result.target_ip} (scan ${portScanId})`);
   } catch (err) {
     Logger.error('Failed to persist vulnerability scan', err as Error);
   }
@@ -139,28 +154,19 @@ function persistPortScan(db: Database, result: any): void {
     const portScanRepo = new PortScanRepository(db);
     const now = new Date().toISOString();
 
-    const latestSnapshot = snapshotRepo.findByGatewayIp(result.target_ip);
-    if (!latestSnapshot) {
-      Logger.warn(`No snapshot found for ${result.target_ip}, skipping persistence`);
-      return;
-    }
-
-    const latestDevice = deviceRepo.findInSnapshot(latestSnapshot.id, result.target_ip);
-    if (!latestDevice) {
-      Logger.warn(`No device record for ${result.target_ip}, skipping persistence`);
-      return;
-    }
+    const found = findSnapshotAndDevice(snapshotRepo, deviceRepo, result.target_ip);
+    if (!found) return;
 
     const portScanId = randomUUID();
     portScanRepo.insert({
-      id: portScanId, snapshot_id: latestSnapshot.id, device_id: latestDevice.id,
+      id: portScanId, snapshot_id: found.snapshot.id, device_id: found.device.id,
       scan_type: result.scan_type, started_at: now, completed_at: now,
       results: JSON.stringify(result), status: 'completed',
     });
 
     if (result.open_ports && result.open_ports.length > 0) {
       createEvent(db, {
-        networkId: latestSnapshot.network_id,
+        networkId: found.snapshot.network_id,
         type: 'port_new', severity: 'info',
         title: `Open ports found on ${result.target_ip}`,
         description: `${result.open_ports.length} open port(s): ${result.open_ports.map((p: any) => `${p.port}/${p.protocol ?? 'tcp'}`).join(', ')}`,

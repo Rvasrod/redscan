@@ -340,21 +340,22 @@ export class HistoryComponent implements OnInit {
   }
 
   goBack(): void {
-    const prev = this.viewStack().pop();
-    if (prev) {
-      this.currentView.set(prev);
-    } else {
-      this.currentView.set('list');
-    }
+    let prevView: View | undefined;
+    this.viewStack.update(stack => {
+      const newStack = [...stack];
+      prevView = newStack.pop();
+      return newStack;
+    });
+    this.currentView.set(prevView ?? 'list');
   }
 
   async acknowledgeEvent(eventId: string): Promise<void> {
     await this.api.acknowledgeEvent(eventId);
-    this.events.update(list => list.map(e => e.id === eventId ? { ...e, acknowledged: 1 } : e));
+    this.events.update(list => list.map(e => e.id === eventId ? { ...e, acknowledged: true } : e));
   }
 
   async acknowledgeAll(): Promise<void> {
     await this.api.acknowledgeAllEvents();
-    this.events.update(list => list.map(e => ({ ...e, acknowledged: 1 })));
+    this.events.update(list => list.map(e => ({ ...e, acknowledged: true })));
   }
 }
