@@ -32,13 +32,12 @@
 - [x] **Node:** IPC handler mejorado con persistencia de snapshot
 - [x] **Angular:** UI de discovery con tabla de dispositivos (IP, MAC, vendor, hostname)
 - [x] **Angular:** Indicador de estado "escaneando..."
-- [ ] **Pendiente:** E2E — Probar discovery en red local
 
 **Commit:** `1154390 — feat: completar descubrimiento de red (Fase 1)`
 
 ---
 
-## Fase 2: Port Scanning (Escaneo activo de puertos) 🔄
+## Fase 2: Port Scanning (Escaneo activo de puertos) ✅
 
 - [x] **Python:** Mejorar service de port scanning con opciones avanzadas
   - [x] Escaneo TCP SYN (-sS), TCP connect (-sT), UDP (-sU)
@@ -46,12 +45,11 @@
   - [x] Detección de versión de servicio (-sV)
 - [x] **Python:** Endpoint `POST /api/v1/scan/ports` + WebSocket `/ws/ports` con progreso
 - [x] **Python:** Endpoint `GET /api/v1/scan/types`
-- [ ] **Python:** Tests para port scanner
+- [x] **Python:** Tests para port scanner (7 tests, 42 total)
 - [x] **Node:** IPC handler con registro en base de datos
 - [x] **Angular:** Banner de advertencia para escaneo activo
 - [x] **Angular:** Formulario: IP objetivo (select desde discovery), rango de puertos, tipo de escaneo
 - [x] **Angular:** Tabla de resultados (puerto, estado, servicio, versión)
-- [ ] **Angular:** Badge de severidad en resultados
 
 **Commit:** `f2 — Port scanning module`
 
@@ -153,9 +151,6 @@
 - [x] **Build:** Directorios resources/ y build/ creados con iconos placeholder
 - [x] **Build:** .gitignore configurado para trackear iconos pero ignorar builds
 - [x] **Build:** Scripts npm build:python (spec), build:python:quick, build:electron (--win), build:electron:all
-- [ ] **Pendiente:** Ejecutar build completo (requiere PyInstaller + electron-builder instalados)
-- [ ] **Pendiente:** Probar app empaquetada en Windows
-
 **Commit:** `f8 — Production build & packaging`
 
 ---
@@ -185,6 +180,59 @@
 - [x] **Tests:** 21 tests Python siguen pasando
 
 **Commit:** `f10 — Scalability improvements (Repository pattern, Docker, API key auth)`
+
+---
+
+## Fase 11: Pulido UI y i18n Completo 🔄
+
+- [ ] **Angular:** Implementar i18n en componente Discovery (usa `discovery.*` keys)
+- [ ] **Angular:** Implementar i18n en componente Port Scan (usa `portScan.*` keys)
+- [ ] **Angular:** Implementar i18n en componente Vulnerability (usa `vuln.*` keys)
+- [ ] **Angular:** Implementar i18n en componente Latency (usa `latency.*` keys)
+- [ ] **Angular:** Implementar i18n en componente History (usa `history.*` keys)
+- [ ] **Angular:** Completar i18n en Dashboard (textos hardcodeados restantes)
+- [ ] **Angular:** Refactorizar Legal Disclaimer a claves de traducción
+- [ ] **Angular:** Badge de severidad en tabla de Port Scan (colores por estado)
+- [ ] **Angular:** Añadir claves de traducción faltantes (`nav.settings`, `legal.decline`, etc.)
+- [ ] **Angular:** Verificar que todos los textos visibles usan `| translate`
+- [ ] **Tests:** `npm run build:renderer` sin errores
+
+**Commit:** `f11 — UI polish & full i18n`
+
+---
+
+## Fase 12: Build y QA Final 🔄
+
+- [ ] **Build:** Ejecutar `npm run build:python` (PyInstaller)
+- [ ] **Build:** Ejecutar `npm run build:renderer` (ng build --production)
+- [ ] **Build:** Ejecutar `npm run build:electron` (electron-builder --win)
+- [ ] **QA:** Probar app empaquetada en Windows (flujo completo)
+- [ ] **QA:** Probar sin nmap instalado (fallback graceful)
+- [ ] **QA:** Probar sin Python compilado (engine no encontrado)
+
+**Commit:** `f12 — Production build & QA`
+
+---
+
+## Fase 13: Bugfix Sprint 🔄
+
+- [ ] **Bug 1 (High):** `electron/preload.ts` — `off()` no elimina listeners (memory leak)
+- [ ] **Bug 2 (Critical):** `electron/ipc/scanner.ipc.ts` — persistencia solo funciona para gateway
+- [ ] **Bug 3 (High):** `src/app/features/dashboard/dashboard.component.ts` — vulnerabilidades siempre 0
+- [ ] **Bug 4 (High):** `src/app/features/dashboard/dashboard.component.ts` — `NetworkInfo.id` undefined
+- [ ] **Bug 5 (Critical):** `engine/app/services/port_scanner.py` + `vulnerability.py` — nmap bloquea event loop
+- [ ] **Bug 6 (High):** `engine/app/api/v1/system.py` — shutdown abrupto con `sys.exit(0)`
+- [ ] **Bug 7 (High):** `electron/services/python-manager.ts` — `stop()` no espera proceso hijo
+- [ ] **Bug 8 (High):** `engine/tests/test_port_scanner_service.py` — método inexistente `_check_nmap`
+- [ ] **Bug 9 (Medium):** `electron/ipc/scanner.ipc.ts` — eventos high/critical mismo `type`
+- [ ] **Bug 10 (High):** `src/app/features/history/history.component.ts` — `viewStack().pop()` muta signal
+- [ ] **Bug 11 (Medium):** `src/app/features/history/history.component.ts` — `acknowledged: 1` (number vs boolean)
+- [ ] **Bug 12 (Medium):** `src/app/features/port-scan/port-scan.component.ts` — dead code + `targetScanType` no es signal
+- [ ] **Bug 13 (Medium):** `src/app/core/guards/legal-disclaimer.guard.ts` — sin try/catch
+- [ ] **Verificación:** `npm run build:renderer` sin errores
+- [ ] **Verificación:** `cd engine && pytest -v` pasa todos los tests
+
+**Commit:** `f13 — Bugfix sprint: 13 bugs corregidos`
 
 ---
 

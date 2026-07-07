@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AppStateService } from '../../core/services/app-state.service';
+import { LocaleService } from '../../core/i18n/locale.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 @Component({
@@ -18,7 +19,7 @@ import { TranslatePipe } from '../../core/i18n/translate.pipe';
             <span class="current-ssid">{{ net.ssid }}</span>
           }
           <span class="status-badge" [class.connected]="api.engineConnected()">
-            {{ api.engineConnected() ? 'Connected' : 'Connecting...' }}
+            {{ api.engineConnected() ? ('dashboard.connected' | translate) : ('dashboard.connecting' | translate) }}
           </span>
         </div>
       </header>
@@ -63,11 +64,11 @@ import { TranslatePipe } from '../../core/i18n/translate.pipe';
           <section class="section current-network">
             <h3>{{ 'dashboard.currentNetwork' | translate }}</h3>
             <div class="network-info">
-              <span><strong>SSID:</strong> {{ net.ssid }}</span>
-              <span><strong>Gateway:</strong> {{ net.gateway_ip }}</span>
-              <span><strong>IP:</strong> {{ net.interface_ip }}</span>
-              <span><strong>Subnet:</strong> {{ net.subnet }}</span>
-              <span><strong>MAC:</strong> {{ net.interface_mac }}</span>
+              <span><strong>{{ 'dashboard.ssidLabel' | translate }}:</strong> {{ net.ssid }}</span>
+              <span><strong>{{ 'dashboard.gatewayLabel' | translate }}:</strong> {{ net.gateway_ip }}</span>
+              <span><strong>{{ 'dashboard.ipLabel' | translate }}:</strong> {{ net.interface_ip }}</span>
+              <span><strong>{{ 'dashboard.subnetLabel' | translate }}:</strong> {{ net.subnet }}</span>
+              <span><strong>{{ 'dashboard.macLabel' | translate }}:</strong> {{ net.interface_mac }}</span>
             </div>
           </section>
         }
@@ -141,6 +142,7 @@ import { TranslatePipe } from '../../core/i18n/translate.pipe';
 export class DashboardComponent implements OnInit {
   protected readonly api = inject(ApiService);
   protected readonly state = inject(AppStateService);
+  private readonly locale = inject(LocaleService);
 
   readonly isLoading = signal(true);
   readonly error = signal<string | null>(null);
@@ -188,9 +190,13 @@ export class DashboardComponent implements OnInit {
             if (snaps.length >= 2) {
               const prev = snaps[1];
               const diff = (latest.device_count || 0) - (prev.device_count || 0);
-              this.deviceChange.set(diff > 0 ? `+${diff} since last scan` : diff < 0 ? `${diff} since last scan` : 'No change');
+              this.deviceChange.set(diff > 0
+                ? this.locale.translate('dashboard.deviceChange').replace('{diff}', String(diff))
+                : diff < 0
+                  ? this.locale.translate('dashboard.deviceRemoved').replace('{diff}', String(diff))
+                  : this.locale.translate('dashboard.noChange'));
             } else {
-              this.deviceChange.set('First scan');
+              this.deviceChange.set(this.locale.translate('dashboard.firstScan'));
             }
 
             const detailResult = await this.api.getSnapshotDetail(latest.id);
@@ -209,7 +215,7 @@ export class DashboardComponent implements OnInit {
               for (const s of ['critical', 'high', 'medium', 'low']) {
                 if (bySeverity[s]) parts.push(`${bySeverity[s]} ${s}`);
               }
-              this.vulnBreakdown.set(parts.join(', ') || 'No vulns');
+              this.vulnBreakdown.set(parts.join(', ') || '');
             }
           }
         }
@@ -223,8 +229,15 @@ export class DashboardComponent implements OnInit {
       const latencyResult = await this.api.measureLatency('gateway');
       if (latencyResult.success && latencyResult.data) {
         const l = latencyResult.data;
-        this.latencyDisplay.set(l.packet_loss_pct >= 100 ? 'No response' : `${l.avg_latency_ms?.toFixed(1)} ms`);
-        this.jitterDisplay.set(l.packet_loss_pct >= 100 ? '100% loss' : `jitter ${l.jitter_ms?.toFixed(1)} ms | loss ${l.packet_loss_pct}%`);
+        if (l.packet_loss_pct >= 100) {
+          this.latencyDisplay.set(this.locale.translate('dashboard.noResponse'));
+          this.jitterDisplay.set(this.locale.translate('dashboard.percentLoss').replace('{value}', '100'));
+        } else {
+          this.latencyDisplay.set(`${l.avg_latency_ms?.toFixed(1)} ms`);
+          this.jitterDisplay.set(this.locale.translate('dashboard.jitterDisplay')
+            .replace('{value}', l.jitter_ms?.toFixed(1) ?? '0')
+            .replace('{loss}', String(l.packet_loss_pct)));
+        }
       }
     } catch (err: any) {
       this.error.set(err.message || 'Failed to load dashboard');

@@ -1,7 +1,6 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
-import { LocaleService } from '../../core/i18n/locale.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 @Component({
@@ -14,46 +13,18 @@ import { TranslatePipe } from '../../core/i18n/translate.pipe';
         <h1>{{ 'app.name' | translate }} — {{ 'legal.title' | translate }}</h1>
         
         <div class="legal-content">
-          <h2>English</h2>
-          <p>
-            NetSentinel is a network monitoring and testing tool. It is designed to be used
-            <strong>only on networks you own or have explicit written permission</strong> from the
-            owner/administrator to test.
-          </p>
-          <p>
-            Unauthorized scanning, monitoring, or penetration testing of networks you do not own
-            is illegal in many jurisdictions and may result in criminal and/or civil penalties.
-          </p>
-          <p>
-            <strong>By accepting this agreement, you acknowledge that:</strong>
-          </p>
+          <h2>{{ 'legal.bodyTitle' | translate }}</h2>
+          <p>{{ 'legal.description' | translate }}</p>
+          <p>{{ 'legal.paragraph1' }}</p>
+          <p>{{ 'legal.paragraph2' }}</p>
           <ul>
-            <li>You will only use this software on networks you own or have permission to test</li>
-            <li>Active scanning features (port scanning, vulnerability detection) require explicit
-              confirmation before each scan</li>
-            <li>You are solely responsible for compliance with all applicable laws</li>
-            <li>The authors of NetSentinel assume no liability for misuse of this software</li>
+            <li>{{ 'legal.list1' | translate }}</li>
+            <li>{{ 'legal.list2' | translate }}</li>
+            <li>{{ 'legal.list3' | translate }}</li>
+            <li>{{ 'legal.list4' | translate }}</li>
           </ul>
-
-          <h2>Español</h2>
-          <p>
-            NetSentinel es una herramienta de monitoreo y testeo de red. Está diseñada para usarse
-            <strong>únicamente en redes de tu propiedad o con permiso explícito por escrito</strong>
-            del propietario/administrador.
-          </p>
-          <p>
-            El escaneo, monitoreo o testeo de penetración no autorizado de redes que no te pertenecen
-            es ilegal en muchos países y puede conllevar sanciones penales y/o civiles.
-          </p>
-          <p>
-            <strong>Al aceptar este acuerdo, reconoces que:</strong>
-          </p>
-          <ul>
-            <li>Solo usarás este software en redes de tu propiedad o con permiso para testear</li>
-            <li>Las funciones de escaneo activo requieren confirmación explícita antes de cada escaneo</li>
-            <li>Eres el único responsable del cumplimiento de las leyes aplicables</li>
-            <li>Los autores de NetSentinel no asumen responsabilidad por el mal uso de este software</li>
-          </ul>
+          <p class="legal-warning">{{ 'legal.paragraph3' | translate }}</p>
+          <p class="legal-warning"><strong>{{ 'legal.warning' | translate }}</strong></p>
         </div>
 
         <div class="legal-actions">
@@ -61,7 +32,7 @@ import { TranslatePipe } from '../../core/i18n/translate.pipe';
             {{ 'legal.accept' | translate }}
           </button>
           <button class="btn btn-secondary" (click)="decline()">
-            {{ localeService.current() === 'en' ? 'I Decline' : 'Rechazo' }}
+            {{ 'legal.decline' | translate }}
           </button>
         </div>
       </div>
@@ -92,6 +63,7 @@ import { TranslatePipe } from '../../core/i18n/translate.pipe';
     p { line-height: 1.6; margin: 0.6rem 0; }
     ul { margin: 0.6rem 0; padding-left: 1.5rem; }
     li { margin: 0.3rem 0; line-height: 1.5; }
+    .legal-warning { color: #e9a560; border-left: 3px solid #e9a560; padding-left: 0.8rem; }
     .legal-actions { display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: flex-end; }
     .btn { padding: 0.7rem 1.5rem; border: none; border-radius: 6px; cursor: pointer; font-size: 1rem; font-weight: 600; }
     .btn-primary { background: #e94560; color: white; }
@@ -104,7 +76,6 @@ export class LegalDisclaimerComponent {
   constructor(
     private readonly api: ApiService,
     private readonly router: Router,
-    protected readonly localeService: LocaleService,
   ) {}
 
   async accept(): Promise<void> {

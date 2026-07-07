@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, dialog } from 'electron';
 import * as path from 'path';
 import { PythonManager } from './services/python-manager';
 import { Database } from './services/database';
@@ -59,7 +59,13 @@ async function initialize(): Promise<void> {
   Logger.info('NetSentinel initialized successfully');
 }
 
-app.whenReady().then(initialize);
+app.whenReady()
+  .then(initialize)
+  .catch((err) => {
+    Logger.error('Failed to initialize', err);
+    dialog.showErrorBox('NetSentinel - Startup Error', `The application failed to start:\n\n${err.message}`);
+    app.quit();
+  });
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

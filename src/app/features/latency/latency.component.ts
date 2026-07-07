@@ -1,5 +1,7 @@
 import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { ApiService } from '../../core/services/api.service';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
+import { LocaleService } from '../../core/i18n/locale.service';
 
 interface LatencyPoint {
   timestamp: string;
@@ -14,18 +16,19 @@ interface LatencyPoint {
 @Component({
   selector: 'app-latency',
   standalone: true,
+  imports: [TranslatePipe],
   template: `
     <div class="page">
       <header class="header">
         <div>
-          <h1>Latency Monitor</h1>
-          <p class="subtitle">Real-time connection quality monitoring</p>
+          <h1>{{ 'latency.title' | translate }}</h1>
+          <p class="subtitle">{{ 'latency.subtitle' | translate }}</p>
         </div>
         <div class="header-controls">
           <button class="btn" [class.btn-active]="isRunning()" (click)="toggleMonitoring()">
-            {{ isRunning() ? 'Stop' : 'Start' }} Monitoring
+            {{ isRunning() ? ('latency.stop' | translate) : ('latency.start' | translate) }}
           </button>
-          <button class="btn btn-secondary" (click)="clearReadings()">Clear</button>
+          <button class="btn btn-secondary" (click)="clearReadings()">{{ 'latency.clear' | translate }}</button>
         </div>
       </header>
 
@@ -38,32 +41,32 @@ interface LatencyPoint {
 
       <div class="metrics-grid">
         <div class="metric-card" [class.alert-critical]="latestReading()?.packet_loss_pct! > 5" [class.alert-warning]="latestReading()?.avg_latency_ms! > 150 && latestReading()?.avg_latency_ms! <= 300">
-          <span class="metric-label">Latency</span>
-          <span class="metric-value">{{ latestReading()?.avg_latency_ms?.toFixed(1) || '—' }} <span class="unit">ms</span></span>
-          <span class="metric-sub">min {{ latestReading()?.min_latency_ms?.toFixed(1) || '—' }} / max {{ latestReading()?.max_latency_ms?.toFixed(1) || '—' }} ms</span>
+          <span class="metric-label">{{ 'latency.avg' | translate }}</span>
+          <span class="metric-value">{{ latestReading()?.avg_latency_ms?.toFixed(1) || '—' }} <span class="unit">{{ 'latency.ms' | translate }}</span></span>
+          <span class="metric-sub">{{ 'latency.min' | translate }} {{ latestReading()?.min_latency_ms?.toFixed(1) || '—' }} / {{ 'latency.max' | translate }} {{ latestReading()?.max_latency_ms?.toFixed(1) || '—' }} {{ 'latency.ms' | translate }}</span>
         </div>
 
         <div class="metric-card" [class.alert-critical]="latestReading()?.packet_loss_pct! > 5">
-          <span class="metric-label">Packet Loss</span>
-          <span class="metric-value">{{ latestReading()?.packet_loss_pct?.toFixed(1) || '—' }} <span class="unit">%</span></span>
+          <span class="metric-label">{{ 'latency.packetLoss' | translate }}</span>
+          <span class="metric-value">{{ latestReading()?.packet_loss_pct?.toFixed(1) || '—' }} <span class="unit">{{ 'latency.percent' | translate }}</span></span>
           <span class="metric-sub">{{ packetLossStatus }}</span>
         </div>
 
         <div class="metric-card">
-          <span class="metric-label">Jitter</span>
-          <span class="metric-value">{{ latestReading()?.jitter_ms?.toFixed(1) || '—' }} <span class="unit">ms</span></span>
-          <span class="metric-sub">Variation in latency</span>
+          <span class="metric-label">{{ 'latency.jitter' | translate }}</span>
+          <span class="metric-value">{{ latestReading()?.jitter_ms?.toFixed(1) || '—' }} <span class="unit">{{ 'latency.ms' | translate }}</span></span>
+          <span class="metric-sub">{{ 'latency.variation' | translate }}</span>
         </div>
 
         <div class="metric-card">
-          <span class="metric-label">Target</span>
+          <span class="metric-label">{{ 'latency.target' | translate }}</span>
           <span class="metric-value value-target">{{ latestReading()?.target || '—' }}</span>
-          <span class="metric-sub">Readings: {{ readings().length }}</span>
+          <span class="metric-sub">{{ 'latency.readings' | translate }}: {{ readings().length }}</span>
         </div>
       </div>
 
       <section class="chart-section">
-        <h2>Latency over time</h2>
+        <h2>{{ 'latency.chart' | translate }}</h2>
         <div class="chart-container">
           <div class="chart-bars">
             @for (point of visibleReadings; track point.timestamp) {
@@ -78,15 +81,15 @@ interface LatencyPoint {
             }
           </div>
           <div class="chart-labels">
-            <span>0ms</span>
-            <span>{{ maxLatencyDisplay() }}ms</span>
+            <span>0{{ 'latency.ms' | translate }}</span>
+            <span>{{ maxLatencyDisplay() }}{{ 'latency.ms' | translate }}</span>
           </div>
         </div>
       </section>
 
       @if (!isRunning() && readings().length === 0 && !error()) {
         <div class="empty">
-          <p>Click <strong>Start Monitoring</strong> to begin real-time latency measurements.</p>
+          <p>{{ 'latency.startPrompt' | translate }}</p>
         </div>
       }
     </div>
@@ -130,6 +133,7 @@ interface LatencyPoint {
 })
 export class LatencyComponent implements OnInit, OnDestroy {
   private readonly api = inject(ApiService);
+  private readonly locale = inject(LocaleService);
 
   readonly isRunning = signal(false);
   readonly error = signal<string | null>(null);
@@ -148,11 +152,13 @@ export class LatencyComponent implements OnInit, OnDestroy {
   }
 
   get packetLossStatus(): string {
+    const locale = this.locale;
     const latest = this.latestReading();
-    if (!latest) return 'No data';
-    if (latest.packet_loss_pct === 0) return 'No loss';
-    if (latest.packet_loss_pct <= 5) return `${latest.packet_loss_pct}% loss`;
-    return `Critical: ${latest.packet_loss_pct}% loss`;
+    if (!latest) return locale.translate('latency.noData');
+    if (latest.packet_loss_pct === 0) return locale.translate('latency.noLoss');
+    const value = latest.packet_loss_pct.toFixed(1);
+    if (latest.packet_loss_pct <= 5) return locale.translate('latency.loss').replace('{value}', value);
+    return locale.translate('latency.criticalLoss').replace('{value}', value);
   }
 
   async ngOnInit(): Promise<void> {
@@ -195,18 +201,18 @@ export class LatencyComponent implements OnInit, OnDestroy {
       };
 
       this.ws.onerror = () => {
-        this.error.set('WebSocket connection error. Is the engine running?');
+        this.error.set(this.locale.translate('latency.wsError'));
         this.stopMonitoring();
       };
 
       this.ws.onclose = () => {
         if (this.isRunning()) {
-          this.error.set('WebSocket disconnected');
+          this.error.set(this.locale.translate('latency.wsDisconnected'));
           this.stopMonitoring();
         }
       };
     } catch (err) {
-      this.error.set('Failed to create WebSocket connection');
+      this.error.set(this.locale.translate('latency.wsFailed'));
       this.stopMonitoring();
     }
   }
@@ -251,6 +257,9 @@ export class LatencyComponent implements OnInit, OnDestroy {
 
   formatTooltip(point: LatencyPoint): string {
     const time = point.timestamp ? new Date(point.timestamp).toLocaleTimeString() : '';
-    return `${time} | ${point.avg_latency_ms.toFixed(1)}ms | loss: ${point.packet_loss_pct}%`;
+    return this.locale.translate('latency.chartLabel')
+        .replace('{time}', time)
+        .replace('{value}', point.avg_latency_ms.toFixed(1))
+        .replace('{loss}', point.packet_loss_pct.toString());
   }
 }

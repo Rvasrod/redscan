@@ -1,3 +1,4 @@
+import os
 import time
 from typing import Optional
 
@@ -17,10 +18,19 @@ _SCAN_TYPE_ARGS: dict[str, str] = {
 }
 
 
+def _get_nmap_search_path() -> tuple:
+    nmap_path = os.environ.get("NMAP_PATH")
+    if nmap_path:
+        nmap_bin = os.path.join(nmap_path, "nmap.exe")
+        if os.path.isfile(nmap_bin):
+            logger.info(f"Using bundled nmap: {nmap_bin}")
+            return (nmap_path,)
+    return ()
+
+
 class PortScannerService:
     async def scan(self, request: PortScanRequest, progress_callback=None) -> PortScanResult:
         logger.info(f"Starting {request.scan_type} scan on {request.target_ip}")
-        self._check_nmap()
         start = time.time()
 
         if request.scan_type not in _SCAN_TYPE_ARGS:
@@ -39,7 +49,7 @@ class PortScannerService:
             if progress_callback:
                 await progress_callback(f"Scanning {request.target_ip}:{ports_arg}...")
 
-            nm = nmap.PortScanner()
+            nm = nmap.PortScanner(nmap_search_path=_get_nmap_search_path())
             result = nm.scan(
                 hosts=request.target_ip,
                 ports=ports_arg,
@@ -76,15 +86,6 @@ class PortScannerService:
             raise PortScanError(f"nmap scan failed: {e}") from e
         except Exception as e:
             raise PortScanError(f"Unexpected error during port scan: {e}") from e
-
-    def _check_nmap(self):
-        try:
-            nmap.PortScanner()
-        except nmap.PortScannerError as e:
-            raise NmapNotFoundError(
-                "nmap is not installed or not found in PATH. "
-                "Install it from https://nmap.org/download.html"
-            ) from e
 
     def get_available_types(self) -> list[str]:
         return list(SCAN_TYPES)

@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 import { ApiService } from '../../core/services/api.service';
 import { AppStateService } from '../../core/services/app-state.service';
 import type { Device } from '../../core/models/device.model';
@@ -22,19 +23,18 @@ interface ScanResult {
 @Component({
   selector: 'app-port-scan',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, TranslatePipe],
   template: `
     <div class="page">
       <header class="header">
         <div>
-          <h1>Port Scanner</h1>
-          <p class="subtitle">Scan open ports on a target device</p>
+          <h1>{{ 'portScan.title' | translate }}</h1>
+          <p class="subtitle">{{ 'portScan.subtitle' | translate }}</p>
         </div>
       </header>
 
       <div class="warning-banner">
-        <strong>Warning:</strong> Port scanning is an active probing technique.
-        Only scan devices you own or have explicit permission to test.
+        <strong>{{ 'portScan.warning' | translate }}</strong>
       </div>
 
       @if (error()) {
@@ -47,9 +47,9 @@ interface ScanResult {
       <section class="scan-form">
         <div class="form-row">
           <div class="form-group">
-            <label for="targetIp">Target IP</label>
+            <label for="targetIp">{{ 'portScan.target' | translate }}</label>
             <select id="targetIp" [(ngModel)]="targetIp" class="form-select">
-              <option value="" disabled>Select a device</option>
+              <option value="" disabled>{{ 'portScan.selectDevice' | translate }}</option>
               @for (device of availableDevices(); track device.ip) {
                 <option [value]="device.ip">{{ device.ip }} {{ device.hostname ? '— ' + device.hostname : '' }}</option>
               }
@@ -57,15 +57,15 @@ interface ScanResult {
           </div>
 
           <div class="form-group">
-            <label for="ports">Port Range</label>
-            <input id="ports" type="text" [(ngModel)]="ports" class="form-input" placeholder="e.g. 22,80,443 or 1-1000">
+            <label for="ports">{{ 'portScan.portRange' | translate }}</label>
+            <input id="ports" type="text" [(ngModel)]="ports" class="form-input" placeholder="{{ 'portScan.placeholder' | translate }}">
           </div>
 
           <div class="form-group">
-            <label for="scanType">Scan Type</label>
+            <label for="scanType">{{ 'portScan.scanType' | translate }}</label>
             <select id="scanType" [(ngModel)]="scanType" class="form-select">
               @for (type of scanTypes(); track type) {
-                <option [value]="type">{{ typeLabels[type] || type }}</option>
+                <option [value]="type">{{ typeKey(type) | translate }}</option>
               }
             </select>
           </div>
@@ -73,7 +73,7 @@ interface ScanResult {
           <div class="form-group checkbox-group">
             <label class="checkbox-label">
               <input type="checkbox" [(ngModel)]="versionDetection">
-              Version Detection (-sV)
+              {{ 'portScan.versionDetection' | translate }}
             </label>
           </div>
         </div>
@@ -82,26 +82,26 @@ interface ScanResult {
           <button class="btn btn-primary" (click)="startScan()" [disabled]="isLoading() || !targetIp">
             @if (isLoading()) {
               <span class="spinner"></span>
-              Scanning...
+              {{ 'portScan.scanning' | translate }}
             } @else {
-              Start Scan
+              {{ 'portScan.scan' | translate }}
             }
           </button>
           @if (devices().length > 0) {
-            <button class="btn btn-secondary" (click)="clearResults()">Clear Results</button>
+            <button class="btn btn-secondary" (click)="clearResults()">{{ 'portScan.clearResults' | translate }}</button>
           }
         </div>
       </section>
 
       @if (devices().length > 0) {
         <section class="results-header">
-          <h2>Results for {{ lastTarget() }}</h2>
-          <span class="scan-info">Scan type: {{ targetScanType }} | {{ scanDuration() }}</span>
+          <h2>{{ 'portScan.resultsFor' | translate }} {{ lastTarget() }}</h2>
+          <span class="scan-info">{{ 'portScan.scanType' | translate }}: {{ targetScanType | translate }} | {{ 'portScan.completedIn' | translate }} {{ scanDuration() }}</span>
         </section>
 
         @if (devices().length === 0 && !isLoading()) {
           <div class="empty">
-            <p>No open ports found.</p>
+            <p>{{ 'portScan.noOpenPorts' | translate }}</p>
           </div>
         }
 
@@ -109,17 +109,17 @@ interface ScanResult {
           <table class="port-table">
             <thead>
               <tr>
-                <th>Port</th>
-                <th>State</th>
-                <th>Service</th>
-                <th>Version</th>
+                <th>{{ 'portScan.port' | translate }}</th>
+                <th>{{ 'portScan.state' | translate }}</th>
+                <th>{{ 'portScan.service' | translate }}</th>
+                <th>{{ 'portScan.version' | translate }}</th>
               </tr>
             </thead>
             <tbody>
               @for (port of devices(); track port.port) {
                 <tr>
                   <td class="port-num">{{ port.port }}</td>
-                  <td><span class="state-badge open">open</span></td>
+                  <td><span class="state-badge" [class]="port.state">{{ port.state === 'open' ? ('portScan.open' | translate) : port.state === 'closed' ? ('portScan.closed' | translate) : port.state === 'filtered' ? ('portScan.filtered' | translate) : port.state }}</span></td>
                   <td>{{ port.service || '—' }}</td>
                   <td class="version">{{ port.version || '—' }}</td>
                 </tr>
@@ -131,7 +131,7 @@ interface ScanResult {
 
       @if (!isLoading() && devices().length === 0 && !error()) {
         <div class="empty">
-          <p>Select a device and click <strong>Start Scan</strong> to begin.</p>
+          <p>{{ 'portScan.startPrompt' | translate }}</p>
         </div>
       }
     </div>
@@ -178,6 +178,8 @@ interface ScanResult {
     .version { font-family: monospace; color: #aaa; font-size: 0.85rem; }
     .state-badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
     .state-badge.open { background: #1a4a2e; color: #4ecca3; }
+    .state-badge.closed { background: #4a1a2e; color: #e94560; }
+    .state-badge.filtered { background: #4a3a1a; color: #e9a560; }
     .empty { display: flex; align-items: center; justify-content: center; padding: 4rem 2rem; color: #666; text-align: center; }
     .empty p { margin: 0; font-size: 1rem; }
   `],
@@ -201,14 +203,6 @@ export class PortScanComponent implements OnInit {
   targetScanType = '';
   scanDuration = signal('');
 
-  readonly typeLabels: Record<string, string> = {
-    tcp_syn: 'TCP SYN (fast)',
-    tcp_connect: 'TCP Connect',
-    udp: 'UDP Scan',
-    tcp_syn_version: 'TCP SYN + Version',
-    tcp_connect_version: 'TCP Connect + Version',
-  };
-
   async ngOnInit(): Promise<void> {
     const devices = this.state.devices();
     this.availableDevices.set(devices);
@@ -226,7 +220,7 @@ export class PortScanComponent implements OnInit {
     this.error.set(null);
     this.devices.set([]);
     this.lastTarget.set(this.targetIp);
-    this.targetScanType = this.typeLabels[this.scanType] || this.scanType;
+    this.targetScanType = this.typeKey(this.scanType);
     this.scanDuration.set('');
 
     const result = await this.api.portScan({
@@ -242,10 +236,10 @@ export class PortScanComponent implements OnInit {
       const data = result.data as ScanResult;
       this.devices.set(data.open_ports);
       if (data.scan_duration_ms) {
-        this.scanDuration.set(`Completed in ${(data.scan_duration_ms / 1000).toFixed(1)}s`);
+        this.scanDuration.set(`${(data.scan_duration_ms / 1000).toFixed(1)}s`);
       }
     } else {
-      this.error.set(result.error || 'Port scan failed');
+      this.error.set(result.error || 'portScan.failed');
     }
   }
 
@@ -253,5 +247,16 @@ export class PortScanComponent implements OnInit {
     this.devices.set([]);
     this.lastTarget.set('');
     this.scanDuration.set('');
+  }
+
+  typeKey(type: string): string {
+    const map: Record<string, string> = {
+      tcp_syn: 'portScan.typeTcpSyn',
+      tcp_connect: 'portScan.typeTcpConnect',
+      udp: 'portScan.typeUdp',
+      tcp_syn_version: 'portScan.typeTcpSynVersion',
+      tcp_connect_version: 'portScan.typeTcpConnectVersion',
+    };
+    return map[type] || type;
   }
 }

@@ -8,25 +8,39 @@ from typing import Optional
 from app.core.logger import logger
 from app.core.exceptions import LatencyError
 from app.models.latency import LatencyMeasurement
+from app.services.discovery import DiscoveryService
 
 
 class LatencyService:
     def __init__(self, ping_count: int = 5):
         self.ping_count = ping_count
+        self._discovery = DiscoveryService()
+
+    async def _resolve_target(self, target: str) -> str:
+        if target == "gateway":
+            try:
+                net = await self._discovery.get_network_info()
+                if net.gateway_ip:
+                    logger.info(f"Resolved target 'gateway' to {net.gateway_ip}")
+                    return net.gateway_ip
+            except Exception as e:
+                logger.warning(f"Could not resolve 'gateway', using literal: {e}")
+        return target
 
     async def measure(self, target: str = "gateway") -> LatencyMeasurement:
-        logger.info(f"Measuring latency to {target}")
+        resolved = await self._resolve_target(target)
+        logger.info(f"Measuring latency to {target} (resolved: {resolved})")
         try:
             times: list[float] = []
             failed = 0
 
             for i in range(self.ping_count):
                 try:
-                    elapsed = await self._ping(target)
+                    elapsed = await self._ping(resolved)
                     times.append(elapsed)
                 except LatencyError:
                     failed += 1
-                    logger.debug(f"Ping {i + 1}/{self.ping_count} to {target} failed")
+                    logger.debug(f"Ping {i + 1}/{self.ping_count} to {resolved} failed")
                 if i < self.ping_count - 1:
                     await asyncio.sleep(0.2)
 

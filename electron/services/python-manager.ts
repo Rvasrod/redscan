@@ -38,12 +38,17 @@ export class PythonManager {
     Logger.info(`Engine path: ${this.enginePath}`);
 
     try {
+      const nmapPath = app.isPackaged
+        ? path.join(process.resourcesPath, 'nmap')
+        : path.join(__dirname, '../../resources/nmap');
+
       if (app.isPackaged) {
         this.process = spawn(this.enginePath, [], {
           env: {
             ...process.env,
             DATABASE_PATH: this.db.path,
             PYTHONUNBUFFERED: '1',
+            NMAP_PATH: nmapPath,
           },
         });
       } else {
@@ -53,6 +58,7 @@ export class PythonManager {
             ...process.env,
             DATABASE_PATH: this.db.path,
             PYTHONUNBUFFERED: '1',
+            NMAP_PATH: nmapPath,
           },
         });
       }

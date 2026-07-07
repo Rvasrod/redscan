@@ -98,7 +98,7 @@ class DiscoveryService:
             )
             for line in result.stdout.split('\n'):
                 line = line.strip()
-                if "SSID" in line and "BSSID" not in line:
+                if ":" in line and ("SSID" in line or "ssid" in line) and "BSSID" not in line and "bssid" not in line:
                     parts = line.split(":", 1)
                     if len(parts) == 2:
                         ssid = parts[1].strip()
@@ -122,36 +122,38 @@ class DiscoveryService:
         info: dict = {"ip": "", "mac": "", "subnet": "", "name": ""}
         sections = re.split(r'\n(?=[^\s])', output)
         for section in sections:
-            if not ("Wireless LAN adapter" in section or "Ethernet adapter" in section):
+            if not section.strip():
+                continue
+            section_lower = section.lower()
+            is_wireless = "inalámbrica" in section_lower or "wireless" in section_lower
+            is_ethernet = "ethernet" in section_lower
+            is_virtual = any(x in section_lower for x in ["vehernet", "virtual", "bluetooth", "virtualbox", "vmware", "pve", "hyper-v"])
+            if not (is_wireless or (is_ethernet and not is_virtual)):
                 continue
             has_ipv4 = False
             local_info: dict = {"ip": "", "mac": "", "subnet": "", "name": ""}
             lines = section.strip().split('\n')
             for line in lines:
                 line = line.strip()
-                if "IPv4 Address" in line and ":" in line:
+                if not local_info["ip"] and ":" in line:
                     m = re.search(r'(\d+\.\d+\.\d+\.\d+)', line)
                     if m:
                         local_info["ip"] = m.group(1)
                         has_ipv4 = True
-                elif "Physical Address" in line and ":" in line:
+                if not local_info["mac"] and ":" in line:
                     m = re.search(r'([0-9A-Fa-f]{2}(?:[-:][0-9A-Fa-f]{2}){5})', line)
                     if m:
                         local_info["mac"] = m.group(1).replace('-', ':').lower()
-                elif "Subnet Mask" in line and ":" in line:
+                if not local_info["subnet"] and ":" in line:
                     m = re.search(r'(\d+\.\d+\.\d+\.\d+)', line)
-                    if m:
+                    if m and m.group(1) != local_info["ip"]:
                         local_info["subnet"] = m.group(1)
-            if "Wireless LAN adapter" in section:
-                m = re.search(r'Wireless LAN adapter (.+?):', section)
-                if m:
-                    local_info["name"] = m.group(1).strip()
-            if "Ethernet adapter" in section:
-                m = re.search(r'Ethernet adapter (.+?):', section)
-                if m:
-                    local_info["name"] = m.group(1).strip()
+            m = re.search(r'(?:adapter|Adaptador)\s+(.+?):', section, re.IGNORECASE)
+            if m:
+                local_info["name"] = m.group(1).strip()
             if has_ipv4 and local_info["ip"]:
                 info = local_info
+                break
         return info
 
     async def _get_windows_gateway(self) -> dict:
@@ -175,12 +177,13 @@ class DiscoveryService:
                 capture_output=True, text=True, timeout=10,
             )
             for line in result.stdout.split('\n'):
-                if "Default Gateway" in line and ":" in line:
-                    parts = line.split(":", 1)
-                    gw_ip = parts[1].strip()
-                    if gw_ip and gw_ip != ":":
-                        gw_mac = await self._resolve_mac_by_ip(gw_ip)
-                        return {"ip": gw_ip, "mac": gw_mac}
+                if re.search(r'(gateway|puerta|enlace|predeterminada)', line, re.IGNORECASE) and ":" in line:
+                    m = re.search(r'(\d+\.\d+\.\d+\.\d+)', line)
+                    if m:
+                        gw_ip = m.group(1)
+                        if gw_ip and gw_ip != "0.0.0.0":
+                            gw_mac = await self._resolve_mac_by_ip(gw_ip)
+                            return {"ip": gw_ip, "mac": gw_mac}
         except (subprocess.TimeoutExpired, FileNotFoundError):
             pass
         return {"ip": "", "mac": None}
@@ -329,9 +332,25 @@ class DiscoveryService:
             result = await asyncio.get_event_loop().run_in_executor(
                 None, lambda: socket.gethostbyaddr(ip)[0]
             )
-            return result
+            if result:
+                return result
         except (socket.herror, socket.gaierror):
-            return None
+            pass
+        if platform.system().lower() == "windows":
+            try:
+                r = await asyncio.get_event_loop().run_in_executor(
+                    None, lambda: subprocess.run(
+                        ["nbtstat", "-A", ip],
+                        capture_output=True, text=True, timeout=5,
+                    )
+                )
+                for line in r.stdout.split('\n'):
+                    m = re.search(r'^\s+(\S+)\s+<00>\s+UNIQUE', line)
+                    if m:
+                        return m.group(1).strip()
+            except Exception:
+                pass
+        return None
 
     async def _fallback_arp_scan(self) -> list[dict]:
         system = platform.system().lower()

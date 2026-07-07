@@ -14,7 +14,8 @@
     "dev:python": "cd engine && uvicorn app.main:app --reload --port 8765",
     "build:python": "cd engine && pyinstaller netsentinel-engine.spec --distpath ../resources --workpath build/pyinstaller --clean",
     "build:python:quick": "cd engine && pyinstaller --onefile --name netsentinel-engine --distpath ../resources --collect-all scapy --collect-all nmap app/main.py",
-    "build:electron": "npm run build:renderer && electron-builder --win",
+    "build:electron:ts": "tsc --project tsconfig.electron.json",
+    "build:electron": "npm run build:renderer && npm run build:electron:ts && electron-builder --win",
     "build:electron:all": "npm run build:renderer && electron-builder",
     "build": "npm run build:python && npm run build:electron",
     "test:angular": "ng test",
@@ -30,8 +31,10 @@
     "@angular/platform-browser": "^19.0.0",
     "@angular/platform-browser-dynamic": "^19.0.0",
     "@angular/router": "^19.0.0",
+    "7zip-bin": "^5.2.0",
     "better-sqlite3": "^11.0.0",
     "rxjs": "^7.8.0",
+    "tslib": "^2.8.1",
     "zone.js": "^0.15.0"
   },
   "devDependencies": {

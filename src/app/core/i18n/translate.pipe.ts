@@ -9,7 +9,8 @@ import { LocaleService } from './locale.service';
 export class TranslatePipe implements PipeTransform {
   private readonly locale = inject(LocaleService);
 
-  transform(key: string, fallback?: string): string {
+  transform(key: string | null | undefined, fallback?: string): string {
+    if (!key) return '';
     return this.locale.translate(key, fallback);
   }
 }

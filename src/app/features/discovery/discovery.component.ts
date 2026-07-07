@@ -2,30 +2,36 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { ApiService } from '../../core/services/api.service';
 import { AppStateService } from '../../core/services/app-state.service';
 import type { Device, DiscoveryResult, NetworkInfo } from '../../core/models/device.model';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 @Component({
   selector: 'app-discovery',
   standalone: true,
+  imports: [TranslatePipe],
   template: `
     <div class="page">
       <header class="header">
         <div>
-          <h1>Network Discovery</h1>
-          <p class="subtitle">Discover devices on your current network</p>
+          <h1>{{ 'discovery.title' | translate }}</h1>
+          <p class="subtitle">{{ 'discovery.subtitle' | translate }}</p>
         </div>
         <button class="btn btn-primary" (click)="startScan()" [disabled]="isLoading()">
           @if (isLoading()) {
             <span class="spinner"></span>
-            Scanning...
+            {{ 'discovery.scanning' | translate }}
           } @else {
-            Scan Network
+            {{ 'discovery.scan' | translate }}
           }
         </button>
       </header>
 
       @if (error()) {
         <div class="alert alert-error">
-          {{ error() }}
+          @if (error() === 'discovery.failed') {
+            {{ 'discovery.failed' | translate }}
+          } @else {
+            {{ error() }}
+          }
           <button class="btn-close" (click)="error.set(null)">x</button>
         </div>
       }
@@ -33,27 +39,27 @@ import type { Device, DiscoveryResult, NetworkInfo } from '../../core/models/dev
       @if (networkInfo(); as net) {
         <section class="network-info">
           <div class="info-item">
-            <span class="label">Network</span>
+            <span class="label">{{ 'discovery.ssid' | translate }}</span>
             <span class="value">{{ net.ssid }}</span>
           </div>
           <div class="info-item">
-            <span class="label">Gateway</span>
+            <span class="label">{{ 'discovery.gateway' | translate }}</span>
             <span class="value">{{ net.gateway_ip }}</span>
           </div>
           <div class="info-item">
-            <span class="label">Your IP</span>
+            <span class="label">{{ 'discovery.ip' | translate }}</span>
             <span class="value">{{ net.interface_ip }}</span>
           </div>
           <div class="info-item">
-            <span class="label">Subnet</span>
+            <span class="label">{{ 'discovery.subnet' | translate }}</span>
             <span class="value">{{ net.subnet || 'N/A' }}</span>
           </div>
           <div class="info-item">
-            <span class="label">Interface</span>
+            <span class="label">{{ 'discovery.interface' | translate }}</span>
             <span class="value">{{ net.interface_name || 'N/A' }}</span>
           </div>
           <div class="info-item">
-            <span class="label">MAC</span>
+            <span class="label">{{ 'discovery.mac' | translate }}</span>
             <span class="value">{{ net.interface_mac || 'N/A' }}</span>
           </div>
         </section>
@@ -61,19 +67,19 @@ import type { Device, DiscoveryResult, NetworkInfo } from '../../core/models/dev
 
       @if (devices().length > 0) {
         <section class="results-header">
-          <h2>Devices <span class="count">({{ devices().length }})</span></h2>
-          <span class="scan-duration">{{ scanDuration() }}</span>
+          <h2>{{ 'discovery.devices' | translate }} <span class="count">({{ devices().length }})</span></h2>
+          <span class="scan-duration">{{ 'discovery.completedIn' | translate }} {{ scanDuration() }}</span>
         </section>
 
         <div class="table-wrapper">
           <table class="device-table">
             <thead>
               <tr>
-                <th>IP Address</th>
-                <th>MAC Address</th>
-                <th>Vendor</th>
-                <th>Hostname</th>
-                <th>Gateway</th>
+                <th>{{ 'discovery.ip' | translate }}</th>
+                <th>{{ 'discovery.mac' | translate }}</th>
+                <th>{{ 'discovery.vendor' | translate }}</th>
+                <th>{{ 'discovery.hostname' | translate }}</th>
+                <th>{{ 'discovery.gatewayTag' | translate }}</th>
               </tr>
             </thead>
             <tbody>
@@ -91,7 +97,7 @@ import type { Device, DiscoveryResult, NetworkInfo } from '../../core/models/dev
                   <td class="hostname">{{ device.hostname || '—' }}</td>
                   <td>
                     @if (device.is_gateway) {
-                      <span class="gateway-badge">Gateway</span>
+                      <span class="gateway-badge">{{ 'discovery.gatewayTag' | translate }}</span>
                     }
                   </td>
                 </tr>
@@ -103,7 +109,7 @@ import type { Device, DiscoveryResult, NetworkInfo } from '../../core/models/dev
 
       @if (!isLoading() && devices().length === 0 && !error()) {
         <div class="empty">
-          <p>No devices discovered yet. Click <strong>Scan Network</strong> to start.</p>
+          <p>{{ 'discovery.noDevicesHint' | translate }}</p>
         </div>
       }
     </div>
@@ -159,6 +165,7 @@ export class DiscoveryComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     await this.loadNetworkInfo();
+    await this.startScan();
   }
 
   async loadNetworkInfo(): Promise<void> {
@@ -186,10 +193,10 @@ export class DiscoveryComponent implements OnInit {
       this.state.setActiveScanning(false);
 
       if (data.scan_duration_ms) {
-        this.scanDuration.set(`Completed in ${(data.scan_duration_ms / 1000).toFixed(1)}s`);
+        this.scanDuration.set(`${(data.scan_duration_ms / 1000).toFixed(1)}s`);
       }
     } else {
-      this.error.set(result.error || 'Discovery scan failed');
+      this.error.set(result.error || 'discovery.failed');
     }
   }
 }

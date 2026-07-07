@@ -20,7 +20,7 @@ export function registerDiscoveryIpc(ipcMain: IpcMain, db: Database, pythonManag
 
   ipcMain.handle('discovery:scan', async () => {
     try {
-      const raw = await httpRequest(`http://127.0.0.1:${pythonManager.port}/api/v1/discovery/scan`, { method: 'POST' });
+      const raw = await httpRequest(`http://127.0.0.1:${pythonManager.port}/api/v1/discovery/scan`, { method: 'POST', timeout: 120000 });
       const result = JSON.parse(raw);
       persistSnapshot(db, result);
       return { success: true, data: result };

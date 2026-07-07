@@ -42,10 +42,18 @@ async def lifespan(app: FastAPI):
     logger.info("NetSentinel engine shutting down")
 
 
+def _get_nmap_path():
+    nmap_path = os.environ.get("NMAP_PATH")
+    if nmap_path and os.path.isfile(os.path.join(nmap_path, "nmap.exe")):
+        return (nmap_path,)
+    return ()
+
+
 def _check_nmap() -> bool:
     try:
         import nmap
-        nm = nmap.PortScanner()
+        search = _get_nmap_path()
+        nm = nmap.PortScanner(nmap_search_path=search) if search else nmap.PortScanner()
         nm.nmap_version()
         return True
     except Exception:
@@ -55,7 +63,8 @@ def _check_nmap() -> bool:
 def get_nmap_status() -> dict:
     try:
         import nmap
-        nm = nmap.PortScanner()
+        search = _get_nmap_path()
+        nm = nmap.PortScanner(nmap_search_path=search) if search else nmap.PortScanner()
         version = nm.nmap_version()
         return {"available": True, "version": f"{version[0]}.{version[1]}"}
     except Exception as e:
@@ -99,7 +108,7 @@ async def nmap_check():
 
 if __name__ == "__main__":
     uvicorn.run(
-        "app.main:app",
+        app,
         host=settings.host,
         port=settings.port,
         reload=settings.reload,

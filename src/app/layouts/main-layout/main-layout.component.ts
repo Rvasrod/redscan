@@ -41,7 +41,7 @@ import { TranslatePipe } from '../../core/i18n/translate.pipe';
         </nav>
         <div class="sidebar-footer">
           <a class="nav-item" routerLink="/settings" routerLinkActive="active">
-            <span class="nav-icon">⚙</span> {{ 'settings.title' | translate }}
+            <span class="nav-icon">⚙</span> {{ 'nav.settings' | translate }}
           </a>
         </div>
       </aside>

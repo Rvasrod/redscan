@@ -2,23 +2,24 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
+import { TranslatePipe } from '../../core/i18n/translate.pipe';
 
 type View = 'list' | 'snapshots' | 'detail' | 'compare' | 'events';
 
 @Component({
   selector: 'app-history',
   standalone: true,
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, FormsModule, TranslatePipe],
   template: `
     <div class="page">
       <header class="header">
         <div class="header-left">
           @if (currentView() !== 'list') {
-            <button class="btn-back" (click)="goBack()">← Back</button>
+            <button class="btn-back" (click)="goBack()">{{ 'history.back' | translate }}</button>
           }
           <div>
-            <h1>History & Comparison</h1>
-            <p class="subtitle">{{ viewTitle() }}</p>
+            <h1>{{ 'history.title' | translate }}</h1>
+            <p class="subtitle">@switch (currentView()) { @case ('list') { {{ 'history.subtitle' | translate }} } @case ('snapshots') { {{ 'history.snapshotsFor' | translate }} {{ selectedNetwork()?.ssid }} } @case ('detail') { {{ 'history.devices' | translate }} } @case ('compare') { {{ 'history.compare' | translate }} } @case ('events') { {{ 'history.events' | translate }} } }</p>
           </div>
         </div>
       </header>
@@ -32,7 +33,7 @@ type View = 'list' | 'snapshots' | 'detail' | 'compare' | 'events';
 
       @if (currentView() === 'list') {
         @if (networks().length === 0) {
-          <div class="empty"><p>No networks discovered yet. Run a scan first.</p></div>
+          <div class="empty"><p>{{ 'history.noNetworks' | translate }}</p></div>
         }
         <div class="network-grid">
           @for (net of networks(); track net.id) {
@@ -40,13 +41,13 @@ type View = 'list' | 'snapshots' | 'detail' | 'compare' | 'events';
               <h3>{{ net.ssid }}</h3>
               <span class="gw">{{ net.gateway_ip }}</span>
               <div class="network-meta">
-                <span>First: {{ net.first_seen | date:'medium' }}</span>
-                <span>Last: {{ net.last_seen | date:'medium' }}</span>
-                <span>IP: {{ net.interface_ip }}</span>
+                <span>{{ 'history.firstSeen' | translate }}: {{ net.first_seen | date:'medium' }}</span>
+                <span>{{ 'history.lastSeen' | translate }}: {{ net.last_seen | date:'medium' }}</span>
+                <span>{{ 'history.tableIp' | translate }}: {{ net.interface_ip }}</span>
               </div>
               <div class="network-actions">
-                <button class="btn-sm btn-sm-primary" (click)="selectNetwork(net)">Snapshots</button>
-                <button class="btn-sm btn-sm-secondary" (click)="showEvents(net)">Events</button>
+                <button class="btn-sm btn-sm-primary" (click)="selectNetwork(net)">{{ 'history.snapshots' | translate }}</button>
+                <button class="btn-sm btn-sm-secondary" (click)="showEvents(net)">{{ 'history.events' | translate }}</button>
               </div>
             </div>
           }
@@ -54,23 +55,23 @@ type View = 'list' | 'snapshots' | 'detail' | 'compare' | 'events';
       }
 
       @if (currentView() === 'snapshots') {
-        <h2>Snapshots for {{ selectedNetwork()?.ssid }}</h2>
+        <h2>{{ 'history.snapshotsFor' | translate }} {{ selectedNetwork()?.ssid }}</h2>
         @if (snapshots().length >= 2) {
           <div class="compare-selector">
             <select [ngModel]="compareSnapA()" (ngModelChange)="compareSnapA.set($event); compareResult.set(null)">
-              <option value="">Select snapshot A (older)</option>
+              <option value="">{{ 'history.selectA' | translate }}</option>
               @for (s of snapshots(); track s.id) {
-                <option [value]="s.id">{{ s.captured_at | date:'medium' }} ({{ s.device_count }} devices)</option>
+                <option [value]="s.id">{{ s.captured_at | date:'medium' }} ({{ s.device_count }} {{ 'history.devices' | translate }})</option>
               }
             </select>
             <span>vs</span>
             <select [ngModel]="compareSnapB()" (ngModelChange)="compareSnapB.set($event); compareResult.set(null)">
-              <option value="">Select snapshot B (newer)</option>
+              <option value="">{{ 'history.selectB' | translate }}</option>
               @for (s of snapshots(); track s.id) {
-                <option [value]="s.id">{{ s.captured_at | date:'medium' }} ({{ s.device_count }} devices)</option>
+                <option [value]="s.id">{{ s.captured_at | date:'medium' }} ({{ s.device_count }} {{ 'history.devices' | translate }})</option>
               }
             </select>
-            <button class="btn-sm btn-sm-primary" (click)="compare()" [disabled]="!compareSnapA() || !compareSnapB()">Compare</button>
+            <button class="btn-sm btn-sm-primary" (click)="compare()" [disabled]="!compareSnapA() || !compareSnapB()">{{ 'history.compareBtn' | translate }}</button>
           </div>
         }
         <div class="snapshot-list">
@@ -78,7 +79,7 @@ type View = 'list' | 'snapshots' | 'detail' | 'compare' | 'events';
             <div class="snapshot-item" (click)="selectSnapshot(s)">
               <div>
                 <div class="time">{{ s.captured_at | date:'medium' }}</div>
-                <div class="count">{{ s.device_count }} devices</div>
+                <div class="count">{{ s.device_count }} {{ 'history.devices' | translate }}</div>
               </div>
               <span>></span>
             </div>
@@ -87,11 +88,11 @@ type View = 'list' | 'snapshots' | 'detail' | 'compare' | 'events';
       }
 
       @if (currentView() === 'detail') {
-        <h2>Devices ({{ snapshotDevices().length }})</h2>
+        <h2>{{ 'history.devices' | translate }} ({{ snapshotDevices().length }})</h2>
         <div class="table-wrapper">
           <table class="device-table">
             <thead>
-              <tr><th>IP</th><th>MAC</th><th>Vendor</th><th>Hostname</th><th></th></tr>
+              <tr><th>{{ 'history.tableIp' | translate }}</th><th>{{ 'history.tableMac' | translate }}</th><th>{{ 'history.tableVendor' | translate }}</th><th>{{ 'history.tableHostname' | translate }}</th><th></th></tr>
             </thead>
             <tbody>
               @for (d of snapshotDevices(); track d.id) {
@@ -100,7 +101,7 @@ type View = 'list' | 'snapshots' | 'detail' | 'compare' | 'events';
                   <td class="mac">{{ d.mac || '—' }}</td>
                   <td>{{ d.vendor || '—' }}</td>
                   <td>{{ d.hostname || '—' }}</td>
-                  <td>@if (d.is_gateway) { <span class="gw-badge">Gateway</span> }</td>
+                  <td>@if (d.is_gateway) { <span class="gw-badge">{{ 'history.gateway' | translate }}</span> }</td>
                 </tr>
               }
             </tbody>
@@ -111,14 +112,14 @@ type View = 'list' | 'snapshots' | 'detail' | 'compare' | 'events';
       @if (currentView() === 'compare') {
         @if (compareResult(); as cmp) {
           <div class="compare-summary">
-            <span class="summary-badge new">{{ cmp.newDevices.length }} new</span>
-            <span class="summary-badge removed">{{ cmp.removedDevices.length }} removed</span>
-            <span class="summary-badge common">{{ cmp.commonDevices.length }} unchanged</span>
-            <span class="summary-badge">Before: {{ cmp.totalBefore }} → After: {{ cmp.totalAfter }}</span>
+            <span class="summary-badge new">{{ cmp.newDevices.length }} {{ 'history.new' | translate }}</span>
+            <span class="summary-badge removed">{{ cmp.removedDevices.length }} {{ 'history.removed' | translate }}</span>
+            <span class="summary-badge common">{{ cmp.commonDevices.length }} {{ 'history.unchanged' | translate }}</span>
+            <span class="summary-badge">{{ 'history.before' | translate }}: {{ cmp.totalBefore }} → {{ 'history.after' | translate }}: {{ cmp.totalAfter }}</span>
           </div>
           <table class="device-table">
             <thead>
-              <tr><th>IP</th><th>MAC</th><th>Vendor</th><th>Hostname</th></tr>
+              <tr><th>{{ 'history.tableIp' | translate }}</th><th>{{ 'history.tableMac' | translate }}</th><th>{{ 'history.tableVendor' | translate }}</th><th>{{ 'history.tableHostname' | translate }}</th></tr>
             </thead>
             <tbody>
               @for (d of cmp.newDevices; track d.ip) {
@@ -151,12 +152,12 @@ type View = 'list' | 'snapshots' | 'detail' | 'compare' | 'events';
       }
 
       @if (currentView() === 'events') {
-        <h2>Events for {{ selectedNetwork()?.ssid }}</h2>
+        <h2>{{ 'history.eventsFor' | translate }} {{ selectedNetwork()?.ssid }}</h2>
         @if (events().length === 0) {
-          <div class="empty"><p>No events recorded yet.</p></div>
+          <div class="empty"><p>{{ 'history.noEvents' | translate }}</p></div>
         }
         <div class="events-toolbar">
-          <button class="btn-ack-all" (click)="acknowledgeAll()">Acknowledge All</button>
+          <button class="btn-ack-all" (click)="acknowledgeAll()">{{ 'history.acknowledgeAll' | translate }}</button>
         </div>
         <div class="events-list">
           @for (e of events(); track e.id) {
@@ -180,7 +181,7 @@ type View = 'list' | 'snapshots' | 'detail' | 'compare' | 'events';
       }
 
       @if (currentView() === 'list' && networks().length === 0) {
-        <div class="empty"><p>No networks discovered yet. Run a scan first.</p></div>
+        <div class="empty"><p>{{ 'history.noNetworks' | translate }}</p></div>
       }
     </div>
   `,

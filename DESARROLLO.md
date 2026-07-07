@@ -527,6 +527,23 @@ No se necesitan cambios de código — la API ya es autocontenida.
 
 ## Registro de Desarrollo (Changelog)
 
+### 2026-07-07 — Bugfix Sprint
+
+- Revisión de código completa en 3 capas (Electron + Angular + Python FastAPI)
+- Identificados y corregidos 11 bugs (críticos, altos y medios):
+  - Electron preload: memory leak por `off()` que no elimina listeners
+  - Scanner IPC: persistencia de scans solo funcionaba para el gateway
+  - Dashboard: vulnerabilidades siempre mostraban 0
+  - Dashboard: `NetworkInfo.id` undefined rompía carga de snapshots/events
+  - Python engine: llamadas bloqueantes de nmap sin `run_in_executor`
+  - Python engine: shutdown abrupto con `sys.exit(0)`
+  - Python manager: `stop()` no esperaba salida del proceso hijo
+  - Tests: test que llamaba a método inexistente
+  - History: `viewStack().pop()` mutaba signal in-place
+  - History: `acknowledged` asignado como número en vez de booleano
+  - Scanner IPC: eventos high/critical indistinguibles (mismo type)
+- Actualizados DESARROLLO.md, PLAN.md y README.md con el estado actual
+
 ### 2026-07-05 — Esqueleto inicial
 
 - Creada estructura del proyecto: Electron + Angular + Python FastAPI
@@ -562,7 +579,27 @@ No se necesitan cambios de código — la API ya es autocontenida.
 - **Electron contextIsolation**: Toda la comunicación con Node.js pasa por contextBridge/preload. El renderer de Angular no tiene acceso directo a Node.js
 - **Importación de servicios nmap**: `PortScannerService` y `VulnerabilityService` se inicializan de forma perezosa (lazy) para que el motor Python pueda importarse sin tener nmap instalado
 
+### Bugfix Sprint — 2026-07-07
+
+A continuación se documentan los bugs encontrados durante la revisión de código del 2026-07-07, con causas raíz y resoluciones:
+
+| # | Capa | Bug | Causa Raíz | Resolución |
+|---|------|-----|------------|------------|
+| 1 | **Electron (preload)** | `off()` no elimina listeners — memory leak | `on()` envuelve el callback en un wrapper anónimo, pero `off()` intenta eliminar el callback original (`wrapper !== callback`) | Almacenar mapping wrapper → callback en un `Map`, buscar el wrapper al hacer `off()` |
+| 2 | **Electron (scanner.ipc)** | Escaneo de puertos/vulnerabilidades solo persiste para el gateway | `persistPortScan()` y `persistVulnerabilityScan()` usan `findByGatewayIp()`; si el target no es el gateway, no encuentra snapshot | Recibir `networkId`/`snapshotId` desde el renderer o buscar el snapshot por IP del dispositivo |
+| 3 | **Angular (dashboard)** | Dashboard siempre muestra 0 vulnerabilidades | El código lee `scanData?.vulnerabilities` de `latest.data` (snapshot de discovery), pero las vulnerabilidades vienen del endpoint `scanner:vulnerability-scan` | Obtener datos desde la DB de port_scans/vulnerabilities, no del snapshot JSON |
+| 4 | **Angular (dashboard)** | `latestNetwork.id` es `undefined` | `NetworkInfo` (de `getNetworkInfo()`) no tiene campo `id`. Se pasa `''` a `getSnapshots()` | Usar el ID de la red desde `networksResult` cuando `currentNet` no tiene `id` |
+| 5 | **Python (port_scanner/vulnerability)** | Llamadas bloqueantes de nmap bloquean el event loop de FastAPI | `nmap.PortScanner().scan()` es síncrono y llamado directamente en `async def` sin `run_in_executor` | Envolver en `loop.run_in_executor(None, ...)` |
+| 6 | **Python (system.py)** | Shutdown con `sys.exit(0)` abrupto | Usa API deprecada (`get_event_loop()`) y no permite shutdown graceful de uvicorn | Usar `asyncio.get_running_loop().stop()` o señalizar a uvicorn |
+| 7 | **Electron (python-manager)** | `stop()` no espera a que el proceso Python termine | Se nulifíca `this.process` inmediatamente después de `kill()`, sin esperar el evento `'exit'` | Hacer `await onExit()` antes de resolver |
+| 8 | **Python (tests)** | Test llama a `_check_nmap()` inexistente en `PortScannerService` | El método solo existe en `VulnerabilityService`; se copió el test sin verificar | Corregir el test o mover el método a una clase base |
+| 9 | **Electron (scanner.ipc)** | Eventos `high` y `critical` usan el mismo `type: 'vuln_critical'` | Copiar y pegar sin cambiar el tipo de evento | Usar `'vuln_high'` para severidad high |
+| 10 | **Angular (history)** | `viewStack().pop()` muta el array interno del signal | Signals solo detectan cambios cuando se llama a `.set()`, `.update()` o `.mutate()`. `.pop()` muta in-place | Usar `viewStack.update(stack => stack.slice(0, -1))` |
+| 11 | **Angular (history)** | `acknowledged: 1` (number) en vez de `true` (boolean) | El modelo `NetworkEvent` define `acknowledged: boolean` pero se asignaba `1` | Usar `true` |
+
 ---
+
+
 
 ## Permisos de Administrador/Root
 

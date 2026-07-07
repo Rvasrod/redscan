@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import { Notification } from 'electron';
 import { Database } from './database';
+import { EventRepository, NetworkRepository } from './repositories';
 import { Logger } from './logger';
 
 interface EventInput {
@@ -18,26 +19,32 @@ const SEVERITY_ORDER: Record<string, number> = {
   info: 1,
 };
 
-export function createEvent(db: Database, input: EventInput): void {
-  try {
-    const database = db.getDb();
-    const now = new Date().toISOString();
+export class EventService {
+  constructor(private readonly db: Database) {}
 
-    database.prepare(
-      `INSERT INTO events (id, network_id, snapshot_id, type, severity, title, description, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run(
-      randomUUID(), input.networkId, input.snapshotId ?? null,
-      input.type, input.severity, input.title, input.description ?? null, now,
-    );
+  create(input: EventInput): void {
+    try {
+      const repo = new EventRepository(this.db);
+      const now = new Date().toISOString();
+      repo.insert({
+        id: randomUUID(),
+        network_id: input.networkId,
+        snapshot_id: input.snapshotId,
+        type: input.type,
+        severity: input.severity,
+        title: input.title,
+        description: input.description,
+        created_at: now,
+      });
 
-    Logger.debug(`Event created: ${input.type} (${input.severity}) — ${input.title}`);
+      Logger.debug(`Event created: ${input.type} (${input.severity}) — ${input.title}`);
 
-    if (SEVERITY_ORDER[input.severity] >= SEVERITY_ORDER.warning) {
-      sendNotification(input.title, input.description);
+      if (SEVERITY_ORDER[input.severity] >= SEVERITY_ORDER['warning']) {
+        sendNotification(input.title, input.description);
+      }
+    } catch (err) {
+      Logger.error('Failed to create event', err as Error);
     }
-  } catch (err) {
-    Logger.error('Failed to create event', err as Error);
   }
 }
 
@@ -48,4 +55,9 @@ function sendNotification(title: string, body?: string): void {
   } catch (err) {
     Logger.error('Failed to show notification', err as Error);
   }
+}
+
+// Convenience function for backward compatibility
+export function createEvent(db: Database, input: EventInput): void {
+  new EventService(db).create(input);
 }

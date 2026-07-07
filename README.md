@@ -51,6 +51,10 @@ Al usar NetSentinel, aceptas estos términos.
 - Privilegios de administrador para escaneo de puertos y descubrimiento avanzado
 - No necesitas Python ni ningún otro runtime — todo está empaquetado
 
+## Estado del Desarrollo
+
+Actualmente en **Fase 13: Bugfix Sprint**. El proyecto ha sido revisado en profundidad y se están corrigiendo bugs críticos identificados en las 3 capas (Electron, Angular, Python). Consulta [PLAN.md](./PLAN.md) para el estado detallado y [DESARROLLO.md](./DESARROLLO.md) para el registro de cambios.
+
 ## Licencia
 
 Licencia MIT — consulta [LICENSE.txt](./LICENSE.txt) para más detalles.

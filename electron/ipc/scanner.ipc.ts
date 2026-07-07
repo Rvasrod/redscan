@@ -21,6 +21,7 @@ export function registerScannerIpc(ipcMain: IpcMain, db: Database, pythonManager
         method: 'POST',
         body,
         headers: { 'Content-Type': 'application/json' },
+        timeout: 300000,
       });
 
       const result = JSON.parse(data);
@@ -28,7 +29,9 @@ export function registerScannerIpc(ipcMain: IpcMain, db: Database, pythonManager
       return { success: true, data: result };
     } catch (err) {
       Logger.error('Failed to run port scan', err as Error);
-      return { success: false, error: (err as Error).message };
+      const msg = (err as Error).message;
+      const detailMatch = msg.match(/"detail":"([^"]+)"/);
+      return { success: false, error: detailMatch ? detailMatch[1] : msg };
     }
   });
 
